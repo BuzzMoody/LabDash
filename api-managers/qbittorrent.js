@@ -1,38 +1,28 @@
-async function proxyFetch(timedFetch, url, { method = 'GET', headers = {}, body = null, cookies = '' } = {}) {
-	const res = await timedFetch('/proxy.php', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ url, method, headers, body, cookies }),
-	});
-	if (!res.ok) return null;
-	return res.json();
-}
+import { makeProxyFetch } from './proxy.js';
 
 export async function api_qbittorrent(svc, timedFetch) {
+	const fetch = makeProxyFetch(svc, timedFetch);
 	try {
-		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
+		let cookies = '';
 
-		let sid = '';
-
-		// If credentials are configured, log in to get a session cookie (SID)
 		if (svc.username || svc.password) {
-			const loginData = await proxyFetch(timedFetch, `${b}/api/v2/auth/login`, {
+			const login = await fetch('/api/v2/auth/login', {
 				method:  'POST',
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 				body:    `username=${encodeURIComponent(svc.username ?? '')}&password=${encodeURIComponent(svc.password ?? '')}`,
 			});
-			if (!loginData || loginData.status !== 200 || loginData.body?.trim() !== 'Ok.') return null;
-			sid = loginData.cookies?.find(c => c.startsWith('SID=')) ?? '';
+			if (!login || login.status !== 200 || login.body?.trim() !== 'Ok.') return null;
+			cookies = login.cookies?.find(c => c.startsWith('SID=')) ?? '';
 		}
 
-		const [trData, toData] = await Promise.all([
-			proxyFetch(timedFetch, `${b}/api/v2/transfer/info`, { cookies: sid }),
-			proxyFetch(timedFetch, `${b}/api/v2/torrents/info`, { cookies: sid }),
+		const [tr, to] = await Promise.all([
+			fetch('/api/v2/transfer/info', { cookies }),
+			fetch('/api/v2/torrents/info', { cookies }),
 		]);
-		if (!trData || !toData || trData.status !== 200 || toData.status !== 200) return null;
+		if (!tr || !to || tr.status !== 200 || to.status !== 200) return null;
 
-		const transfer = JSON.parse(trData.body);
-		const torrents = JSON.parse(toData.body);
+		const transfer = JSON.parse(tr.body);
+		const torrents = JSON.parse(to.body);
 		const active   = torrents.filter(t => ['downloading', 'uploading', 'stalledDL', 'stalledUP'].includes(t.state));
 
 		const fmtSpeed = (bps) => {
