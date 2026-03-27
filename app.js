@@ -356,6 +356,16 @@ async function updateService(svc) {
 	}
 
 	updateCounters();
+	setLastUpdated();
+}
+
+// ── Last updated timestamp ─────────────────────────────────────────────────────
+function setLastUpdated() {
+	const el  = document.getElementById('last-updated');
+	if (!el) return;
+	const now = new Date();
+	const pad = n => String(n).padStart(2, '0');
+	el.textContent = `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
 // ── Counters ──────────────────────────────────────────────────────────────────
@@ -450,11 +460,6 @@ async function refreshAll() {
 	await Promise.allSettled(state.services.map(updateService));
 
 	btn?.classList.remove('spinning');
-
-	const now = new Date();
-	const pad = n => String(n).padStart(2, '0');
-	const el  = document.getElementById('last-updated');
-	if (el) el.textContent = `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
 // ── Countdown ─────────────────────────────────────────────────────────────────
