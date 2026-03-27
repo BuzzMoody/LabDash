@@ -821,7 +821,7 @@ body {
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-3);
+  color: var(--text-2);
   font-family: var(--font);
   font-weight: 600;
 }
