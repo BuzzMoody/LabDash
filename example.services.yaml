@@ -66,6 +66,8 @@ services:
     icon: "⬇️"
     description: "BitTorrent download client"
     api_type: qbittorrent
+    username: "admin"               # required — API calls are proxied server-side
+    password: "your-password"       # required — to avoid CORS issues
 
   # ── Infrastructure ────────────────────────────────────────────────────────
   - name: Proxmox VE
