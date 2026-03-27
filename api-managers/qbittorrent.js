@@ -12,16 +12,18 @@ export async function api_qbittorrent(svc, timedFetch) {
 	try {
 		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
 
-		// Authenticate via proxy to get a session cookie (SID)
-		const loginData = await proxyFetch(timedFetch, `${b}/api/v2/auth/login`, {
-			method:  'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body:    `username=${encodeURIComponent(svc.username ?? '')}&password=${encodeURIComponent(svc.password ?? '')}`,
-		});
-		if (!loginData || loginData.status !== 200 || loginData.body?.trim() !== 'Ok.') return null;
+		let sid = '';
 
-		const sid = loginData.cookies?.find(c => c.startsWith('SID='));
-		if (!sid) return null;
+		// If credentials are configured, log in to get a session cookie (SID)
+		if (svc.username || svc.password) {
+			const loginData = await proxyFetch(timedFetch, `${b}/api/v2/auth/login`, {
+				method:  'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body:    `username=${encodeURIComponent(svc.username ?? '')}&password=${encodeURIComponent(svc.password ?? '')}`,
+			});
+			if (!loginData || loginData.status !== 200 || loginData.body?.trim() !== 'Ok.') return null;
+			sid = loginData.cookies?.find(c => c.startsWith('SID=')) ?? '';
+		}
 
 		const [trData, toData] = await Promise.all([
 			proxyFetch(timedFetch, `${b}/api/v2/transfer/info`, { cookies: sid }),
