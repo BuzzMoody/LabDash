@@ -42,6 +42,13 @@ const state = {
 const catColor = (cat) => CATEGORY_COLORS[(cat ?? '').toLowerCase()] ?? '#94a3b8';
 const svcId    = (svc) => svc.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
 const fmtNum   = (n)   => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString();
+const fmtBytes = (b)   => {
+	if (b == null || isNaN(b)) return '—';
+	const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+	let i = 0;
+	while (b >= 1024 && i < units.length - 1) { b /= 1024; i++; }
+	return `${b.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};
 
 function debounce(fn, ms) {
 	let t;
@@ -313,7 +320,7 @@ async function updateService(svc) {
 	}
 
 	if (online && svc.api_type && API_HANDLERS[svc.api_type]) {
-		const stats = await API_HANDLERS[svc.api_type](svc, timedFetch, { fmtNum });
+		const stats = await API_HANDLERS[svc.api_type](svc, timedFetch, { fmtNum, fmtBytes });
 		if (stats) {
 			state.statsMap[id] = stats;
 			const statsEl = document.getElementById(`stats-${id}`);
