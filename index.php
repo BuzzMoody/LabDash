@@ -8,6 +8,10 @@ if (!file_exists($configPath)) {
 }
 $yamlContent = file_exists($configPath) ? file_get_contents($configPath) : '';
 
+// ── Read version from VERSION file ────────────────────────────────────────────
+$versionFile = __DIR__ . '/VERSION';
+$appVersion  = file_exists($versionFile) ? trim(file_get_contents($versionFile)) : '1.0.0';
+
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: 0');
@@ -104,9 +108,9 @@ header('Expires: 0');
           </div>
         </div>
         <div class="sidebar-meta">
-          <span class="meta-item">v1.0.0</span>
+          <span class="meta-item">v<?= htmlspecialchars($appVersion) ?></span>
           <span class="meta-sep">·</span>
-          <a href="https://github.com/" class="meta-item meta-link" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://github.com/BuzzMoody/LabDash" class="meta-item meta-link" target="_blank" rel="noopener noreferrer">GitHub</a>
           <span class="meta-sep">·</span>
           <span class="meta-item">Made by Buzz</span>
         </div>

@@ -3,7 +3,7 @@
 #  Lightweight PHP CLI + built-in server on Alpine
 # =============================================================================
 
-FROM php:8.3-cli-alpine
+FROM php:8.5-cli-alpine
 
 # Install wget to grab js-yaml at build time (removed afterwards)
 RUN apk add --no-cache wget \
@@ -17,6 +17,7 @@ RUN mkdir -p /var/www/html
 COPY index.php    /var/www/html/index.php
 COPY styles.css   /var/www/html/styles.css
 COPY app.js       /var/www/html/app.js
+COPY VERSION      /var/www/html/VERSION
 RUN  cp /tmp/js-yaml.min.js /var/www/html/js-yaml.min.js && rm /tmp/js-yaml.min.js
 
 # ── Example config (copied to /config on first run if absent) ─────────────────
