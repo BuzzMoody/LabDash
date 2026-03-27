@@ -35,7 +35,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=beta
-            type=sha,prefix=beta-,format=short
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
