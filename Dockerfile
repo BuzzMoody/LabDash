@@ -5,18 +5,16 @@
 
 FROM php:8.5-cli-alpine
 
-# Install wget (for js-yaml) and curl-dev (for PHP curl extension)
-RUN apk add --no-cache wget curl-dev \
- && docker-php-ext-install curl \
+# Install wget to grab js-yaml at build time (removed afterwards)
+RUN apk add --no-cache wget \
  && wget -q -O /tmp/js-yaml.min.js \
         https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js \
- && apk del wget curl-dev
+ && apk del wget
 
 # ── Web root ──────────────────────────────────────────────────────────────────
 RUN mkdir -p /var/www/html
 
 COPY index.php      /var/www/html/index.php
-COPY proxy.php      /var/www/html/proxy.php
 COPY styles.css     /var/www/html/styles.css
 COPY app.js         /var/www/html/app.js
 COPY VERSION        /var/www/html/VERSION
