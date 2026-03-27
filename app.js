@@ -322,14 +322,35 @@ async function updateService(svc) {
 	if (online && svc.api_type && API_HANDLERS[svc.api_type]) {
 		const stats = await API_HANDLERS[svc.api_type](svc, timedFetch, { fmtNum, fmtBytes });
 		if (stats) {
+			const prevStats = state.statsMap[id];
 			state.statsMap[id] = stats;
 			const statsEl = document.getElementById(`stats-${id}`);
 			if (statsEl) {
-				statsEl.innerHTML = stats.map(s => `
-					<div class="stat-chip">
-						<span class="s-label">${s.label}</span>
-						<span class="s-value">${s.value}</span>
-					</div>`).join('');
+				const prevLabels = (prevStats ?? []).map(s => s.label).join(',');
+				const newLabels  = stats.map(s => s.label).join(',');
+
+				if (prevLabels !== newLabels) {
+					// Structure changed — full rebuild, no flash
+					statsEl.innerHTML = stats.map(s => `
+						<div class="stat-chip">
+							<span class="s-label">${s.label}</span>
+							<span class="s-value">${s.value}</span>
+						</div>`).join('');
+				} else {
+					// Same structure — update only changed values and flash those chips
+					const chips = statsEl.querySelectorAll('.stat-chip');
+					stats.forEach((s, i) => {
+						const chip    = chips[i];
+						if (!chip) return;
+						const valueEl = chip.querySelector('.s-value');
+						if (valueEl && valueEl.textContent !== String(s.value)) {
+							valueEl.textContent = s.value;
+							chip.classList.remove('stat-updated');
+							void chip.offsetWidth; // force reflow to restart animation
+							chip.classList.add('stat-updated');
+						}
+					});
+				}
 			}
 		}
 	}

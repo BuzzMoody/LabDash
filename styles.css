@@ -829,6 +829,13 @@ body {
   font-weight: 600;
   color: var(--card-accent);
 }
+@keyframes stat-value-flash {
+  0%   { color: #fff; text-shadow: 0 0 8px var(--card-accent); }
+  100% { color: var(--card-accent); text-shadow: none; }
+}
+.stat-chip.stat-updated .s-value {
+  animation: stat-value-flash 0.55s ease-out forwards;
+}
 
 /* Card accent bar (bottom) */
 .card-accent-bar {
