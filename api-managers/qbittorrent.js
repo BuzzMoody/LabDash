@@ -1,13 +1,28 @@
+import { makeProxyFetch } from './proxy.js';
+
 export async function api_qbittorrent(svc, timedFetch) {
+	const fetch = makeProxyFetch(svc, timedFetch);
 	try {
-		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
+		let cookies = '';
+
+		if (svc.username || svc.password) {
+			const login = await fetch('/api/v2/auth/login', {
+				method:  'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body:    `username=${encodeURIComponent(svc.username ?? '')}&password=${encodeURIComponent(svc.password ?? '')}`,
+			});
+			if (!login || login.status !== 200 || login.body?.trim() !== 'Ok.') return null;
+			cookies = login.cookies?.find(c => c.startsWith('SID=')) ?? '';
+		}
+
 		const [tr, to] = await Promise.all([
-			timedFetch(`${b}/api/v2/transfer/info`,  { credentials: 'include' }),
-			timedFetch(`${b}/api/v2/torrents/info`,  { credentials: 'include' }),
+			fetch('/api/v2/transfer/info', { cookies }),
+			fetch('/api/v2/torrents/info', { cookies }),
 		]);
-		if (!tr.ok || !to.ok) return null;
-		const transfer = await tr.json();
-		const torrents = await to.json();
+		if (!tr || !to || tr.status !== 200 || to.status !== 200) return null;
+
+		const transfer = JSON.parse(tr.body);
+		const torrents = JSON.parse(to.body);
 		const active   = torrents.filter(t => ['downloading', 'uploading', 'stalledDL', 'stalledUP'].includes(t.state));
 
 		const fmtSpeed = (bps) => {
