@@ -2,8 +2,8 @@ export async function api_qbittorrent(svc, timedFetch) {
 	try {
 		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
 		const [tr, to] = await Promise.all([
-			timedFetch(`${b}/api/v2/transfer/info`, { credentials: 'include' }),
-			timedFetch(`${b}/api/v2/torrents/info`, { credentials: 'include' }),
+			timedFetch(`${b}/api/v2/transfer/info`),
+			timedFetch(`${b}/api/v2/torrents/info`),
 		]);
 		if (!tr.ok || !to.ok) return null;
 		const transfer = await tr.json();
