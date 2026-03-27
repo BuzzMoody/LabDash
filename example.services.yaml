@@ -1,0 +1,151 @@
+# =============================================================================
+#  Homelab Dashboard — Example Configuration
+# =============================================================================
+#
+#  Copy this file to your mounted config directory as services.yaml
+#  and edit it to match your setup.
+#
+#  Logo images:
+#    Place .svg / .png files in your config/logos/ directory.
+#    Reference them with the logo: field (e.g. logo: jellyfin.svg).
+#    If no logo is set, the icon: emoji is used instead.
+#
+#  Endpoint field:
+#    Use endpoint: when your service's API/health URL differs from the
+#    web UI URL.  The dashboard uses endpoint: for status checks and
+#    api_type queries, and url: for the clickable card link.
+#
+#  Supported api_type values (enables rich stats on the card):
+#    qbittorrent  proxmox   glances    immich   pihole
+#    sonarr       radarr    portainer  jellyfin homeassistant
+#    nextcloud    grafana   adguard
+#
+# =============================================================================
+
+settings:
+  title: "My Homelab"
+  subtitle: "Home Server"
+  refresh_interval: 30          # seconds between auto-refresh
+
+services:
+
+  # ── Media ─────────────────────────────────────────────────────────────────
+  - name: Jellyfin
+    url: "http://192.168.1.10:8096"
+    category: Media
+    logo: jellyfin.svg            # place jellyfin.svg in config/logos/
+    icon: "🎦"
+    description: "Open-source media server"
+    api_type: jellyfin
+    api_key: "your-jellyfin-api-key"
+
+  - name: Sonarr
+    url: "http://192.168.1.10:8989"
+    category: Media
+    logo: sonarr.svg
+    icon: "📺"
+    description: "TV show collection manager"
+    api_type: sonarr
+    api_key: "your-sonarr-api-key"
+
+  - name: Radarr
+    url: "http://192.168.1.10:7878"
+    category: Media
+    logo: radarr.svg
+    icon: "🎥"
+    description: "Movie collection manager"
+    api_type: radarr
+    api_key: "your-radarr-api-key"
+
+  # ── Downloads ─────────────────────────────────────────────────────────────
+  - name: qBittorrent
+    url: "http://192.168.1.10:8080"
+    # endpoint: "http://192.168.1.10:8080"  # uncomment if API URL differs from UI URL
+    category: Downloads
+    logo: qbittorrent.svg
+    icon: "⬇️"
+    description: "BitTorrent download client"
+    api_type: qbittorrent
+
+  # ── Infrastructure ────────────────────────────────────────────────────────
+  - name: Proxmox VE
+    url: "https://192.168.1.10:8006"
+    category: Infrastructure
+    logo: proxmox.svg
+    icon: "🖥️"
+    description: "Bare-metal virtualization platform"
+    api_type: proxmox
+    api_key: "PVEAPIToken=root@pam!token-name=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+  - name: Portainer
+    url: "http://192.168.1.10:9000"
+    category: Infrastructure
+    logo: portainer.svg
+    icon: "🐳"
+    description: "Docker container management"
+    api_type: portainer
+    api_key: "your-portainer-api-key"
+
+  # ── Network ───────────────────────────────────────────────────────────────
+  - name: Pi-hole
+    url: "http://192.168.1.10/admin/"
+    endpoint: "http://192.168.1.10"   # API lives at root, not /admin/
+    category: Network
+    logo: pi-hole.svg
+    icon: "🛡️"
+    description: "Network-wide DNS ad blocker"
+    api_type: pihole
+    api_key: "your-pihole-api-key"
+
+  - name: Nginx Proxy Manager
+    url: "http://192.168.1.10:81"
+    category: Network
+    logo: nginx-proxy-manager.svg
+    icon: "🔀"
+    description: "Reverse proxy with SSL"
+
+  # ── Monitoring ────────────────────────────────────────────────────────────
+  - name: Glances
+    url: "http://192.168.1.10:61208"
+    category: Monitoring
+    logo: glances.svg
+    icon: "📊"
+    description: "System resource monitor"
+    api_type: glances
+
+  - name: Grafana
+    url: "http://192.168.1.10:3000"
+    category: Monitoring
+    logo: grafana.svg
+    icon: "📈"
+    description: "Metrics and dashboards"
+    api_type: grafana
+    api_key: "your-grafana-service-account-token"
+
+  # ── Storage ───────────────────────────────────────────────────────────────
+  - name: Nextcloud
+    url: "http://192.168.1.10:8888"
+    category: Storage
+    logo: nextcloud.svg
+    icon: "☁️"
+    description: "Self-hosted file storage"
+    api_type: nextcloud
+    api_key: "username:app-password"
+
+  # ── Smart Home ────────────────────────────────────────────────────────────
+  - name: Home Assistant
+    url: "http://192.168.1.10:8123"
+    category: Smart Home
+    logo: home-assistant.svg
+    icon: "🏠"
+    description: "Home automation platform"
+    api_type: homeassistant
+    api_key: "your-long-lived-access-token"
+
+  # ── Security ──────────────────────────────────────────────────────────────
+  - name: Vaultwarden
+    url: "http://192.168.1.10:8222"
+    category: Security
+    logo: bitwarden.svg
+    icon: "🔐"
+    description: "Self-hosted password vault"
