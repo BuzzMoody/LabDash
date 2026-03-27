@@ -168,7 +168,9 @@ async function updateService(svc) {
 
 	const statusEl = document.getElementById(`status-${id}`);
 	if (statusEl) {
-		statusEl.className = `service-status ${state.statusMap[id]}`;
+		const s = state.statusMap[id];
+		statusEl.className = `service-status ${s}`;
+		statusEl.querySelector('.status-dot').className = `status-dot ${s}`;
 		statusEl.querySelector('.status-text').textContent = online ? 'Online' : 'Offline';
 	}
 
