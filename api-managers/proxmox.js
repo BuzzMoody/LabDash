@@ -1,26 +1,26 @@
 export async function api_proxmox(svc, timedFetch) {
+	const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+	if (!args.length) return null;
+
 	try {
-		const baseUrl = (svc.endpoint ?? svc.url).replace(/\/$/, '');
+		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
 		const headers = { 'Authorization': `PVEAPIToken=${svc.api_key}` };
 
-		const res = await timedFetch(`${baseUrl}/api2/json/cluster/resources`, { headers });
+		const res = await timedFetch(`${b}/api2/json/cluster/resources`, { headers });
 		if (!res.ok) return null;
 
 		const { data } = await res.json();
-
-		// Filter and breakdown
-		const vms = data.filter(r => r.type === 'qemu');
+		const vms  = data.filter(r => r.type === 'qemu');
 		const lxcs = data.filter(r => r.type === 'lxc');
 
-		const runningVMs = vms.filter(v => v.status === 'running').length;
-		const runningLXCs = lxcs.filter(l => l.status === 'running').length;
+		const available = {
+			vms:  () => ({ label: 'VMs',  value: `${vms.filter(v => v.status === 'running').length}/${vms.length}` }),
+			lxcs: () => ({ label: 'LXCs', value: `${lxcs.filter(l => l.status === 'running').length}/${lxcs.length}` }),
+		};
 
-		return [
-			{ label: 'VMs',  value: `${runningVMs}/${vms.length}` },
-			{ label: 'LXCs', value: `${runningLXCs}/${lxcs.length}` }
-		];
+		return args.map(a => available[a]?.()).filter(Boolean);
 	} catch (err) {
-		console.error("Proxmox API Error:", err);
+		console.error('[Proxmox API] Error:', err);
 		return null;
 	}
 }

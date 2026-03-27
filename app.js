@@ -32,7 +32,7 @@ const state = {
 	dashView: localStorage.getItem('dashView') ?? 'flat',
 	statusMap: {},
 	statsMap: {},
-	refreshTimer: null,
+	svcTimers: {},
 	countdownTimer: null,
 	nextRefreshAt: null,
 	settings: {},
@@ -403,6 +403,24 @@ function initViewToggle() {
 	});
 }
 
+// ── Per-service timers ────────────────────────────────────────────────────────
+function clearServiceTimers() {
+	Object.values(state.svcTimers).forEach(clearInterval);
+	state.svcTimers = {};
+}
+
+function startServiceTimers() {
+	clearServiceTimers();
+	state.services.forEach(svc => {
+		const ms = svc.refresh != null
+			? svc.refresh * 1000
+			: CONFIG.refreshInterval;
+		state.svcTimers[svcId(svc)] = setInterval(() => updateService(svc), ms);
+	});
+	// Countdown tracks the default refresh cycle
+	state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
+}
+
 // ── Refresh ───────────────────────────────────────────────────────────────────
 async function refreshAll() {
 	const btn = document.getElementById('refresh-btn');
@@ -416,8 +434,6 @@ async function refreshAll() {
 	const pad = n => String(n).padStart(2, '0');
 	const el  = document.getElementById('last-updated');
 	if (el) el.textContent = `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-
-	state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
 }
 
 // ── Countdown ─────────────────────────────────────────────────────────────────
@@ -493,21 +509,13 @@ async function init() {
 
 	await refreshAll();
 
-	state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
 	startCountdown();
-	state.refreshTimer = setInterval(async () => {
-		await refreshAll();
-		state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
-	}, CONFIG.refreshInterval);
+	startServiceTimers();
 
 	document.getElementById('refresh-btn')?.addEventListener('click', async () => {
-		clearInterval(state.refreshTimer);
+		clearServiceTimers();
 		await refreshAll();
-		state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
-		state.refreshTimer = setInterval(async () => {
-			await refreshAll();
-			state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
-		}, CONFIG.refreshInterval);
+		startServiceTimers();
 	});
 
 	document.getElementById('search')?.addEventListener('input', debounce(e => {

@@ -1,22 +1,24 @@
 export async function api_emby(svc, timedFetch, utils) {
+	const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+	if (!args.length) return null;
+
 	try {
-		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		
-		// Use the query parameter method to bypass CORS preflight issues
+		const b         = (svc.endpoint ?? svc.url).replace(/\/$/, '');
 		const authQuery = svc.api_key ? `?api_key=${svc.api_key}` : '';
-		
+
 		const res = await timedFetch(`${b}/Items/Counts${authQuery}`);
 		if (!res.ok) return null;
-		
 		const data = await res.json();
-		
-		return [
-			{ label: 'Movies',   value: utils.fmtNum(data.MovieCount ?? 0) },
-			{ label: 'Series',   value: utils.fmtNum(data.SeriesCount ?? 0) },
-			{ label: 'Episodes', value: utils.fmtNum(data.EpisodeCount ?? 0) }
-		];
+
+		const available = {
+			movies:   () => ({ label: 'Movies',   value: utils.fmtNum(data.MovieCount   ?? 0) }),
+			series:   () => ({ label: 'Series',   value: utils.fmtNum(data.SeriesCount  ?? 0) }),
+			episodes: () => ({ label: 'Episodes', value: utils.fmtNum(data.EpisodeCount ?? 0) }),
+		};
+
+		return args.map(a => available[a]?.()).filter(Boolean);
 	} catch (err) {
 		console.error(`[Emby API] Error fetching stats:`, err);
-		return null; 
+		return null;
 	}
 }

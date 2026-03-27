@@ -1,4 +1,7 @@
 export async function api_qbittorrent(svc, timedFetch) {
+	const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+	if (!args.length) return null;
+
 	try {
 		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
 		const [tr, to] = await Promise.all([
@@ -17,10 +20,12 @@ export async function api_qbittorrent(svc, timedFetch) {
 			return `${(bps / k ** i).toFixed(1)} ${sizes[i]}/s`;
 		};
 
-		return [
-			{ label: 'Active', value: active.length },
-			{ label: 'DL',     value: fmtSpeed(transfer.dl_info_speed ?? 0) },
-			{ label: 'UL',     value: fmtSpeed(transfer.up_info_speed ?? 0) },
-		];
+		const available = {
+			active: () => ({ label: 'Active', value: active.length }),
+			dl:     () => ({ label: 'DL',     value: fmtSpeed(transfer.dl_info_speed ?? 0) }),
+			ul:     () => ({ label: 'UL',     value: fmtSpeed(transfer.up_info_speed ?? 0) }),
+		};
+
+		return args.map(a => available[a]?.()).filter(Boolean);
 	} catch { return null; }
 }

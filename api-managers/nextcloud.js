@@ -1,20 +1,25 @@
 export async function api_nextcloud(svc, timedFetch, utils) {
+	const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+	if (!args.length) return null;
+
 	try {
-		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
+		const b            = (svc.endpoint ?? svc.url).replace(/\/$/, '');
 		const [user, pass] = (svc.api_key ?? ':').split(':');
 		const res = await timedFetch(
 			`${b}/ocs/v2.php/apps/serverinfo/api/v1/info?format=json`,
 			{ headers: { 'Authorization': `Basic ${btoa(`${user}:${pass}`)}`, 'OCS-APIRequest': 'true' } }
 		);
 		if (!res.ok) return null;
-		const d = await res.json();
-		const nc = d?.ocs?.data?.nextcloud;
+		const d   = await res.json();
+		const nc  = d?.ocs?.data?.nextcloud;
 		const sys = d?.ocs?.data?.server;
-		const stats = [
-			{ label: 'Files', value: utils.fmtNum(nc?.storage?.num_files) },
-			{ label: 'Users', value: utils.fmtNum(nc?.storage?.num_users) },
-		];
-		if (sys?.php?.version) stats.push({ label: 'PHP', value: sys.php.version.split('.').slice(0,2).join('.') });
-		return stats;
+
+		const available = {
+			files: () => ({ label: 'Files', value: utils.fmtNum(nc?.storage?.num_files) }),
+			users: () => ({ label: 'Users', value: utils.fmtNum(nc?.storage?.num_users) }),
+			php:   () => sys?.php?.version ? { label: 'PHP', value: sys.php.version.split('.').slice(0, 2).join('.') } : null,
+		};
+
+		return args.map(a => available[a]?.()).filter(Boolean);
 	} catch { return null; }
 }

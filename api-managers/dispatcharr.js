@@ -1,4 +1,7 @@
 export async function api_dispatcharr(svc, timedFetch, utils) {
+	const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+	if (!args.length) return null;
+
 	try {
 		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
 
@@ -21,9 +24,11 @@ export async function api_dispatcharr(svc, timedFetch, utils) {
 
 		const channels = await res.json();
 
-		return [
-			{ label: 'Channels', value: utils.fmtNum(channels.length) },
-		];
+		const available = {
+			channels: () => ({ label: 'Channels', value: utils.fmtNum(channels.length) }),
+		};
+
+		return args.map(a => available[a]?.()).filter(Boolean);
 	} catch (err) {
 		console.error('[Dispatcharr API] Error:', err);
 		return null;

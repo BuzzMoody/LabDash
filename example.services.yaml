@@ -20,6 +20,30 @@
 #    sonarr       radarr    portainer  jellyfin homeassistant
 #    nextcloud    grafana   adguard    emby     dispatcharr
 #
+#  args field (controls which stats are shown on the card):
+#    Comma-separated list of stat keys for the api_type. If omitted, no stats
+#    are shown. Available keys per type:
+#      qbittorrent:  active, dl, ul
+#      proxmox:      vms, lxcs
+#      glances:      cpu, ram, swap, load
+#      immich:       photos, videos, usage
+#      pihole:       blocked, queries, status
+#      sonarr:       series, monitored
+#      radarr:       movies, downloaded
+#      portainer:    endpoints, running, stacks
+#      jellyfin:     movies, series, episodes
+#      homeassistant: entities, active
+#      nextcloud:    files, users, php
+#      grafana:      dashboards, sources
+#      adguard:      blocked, queries
+#      emby:         movies, series, episodes
+#      dispatcharr:  channels
+#
+#  refresh field (per-service refresh interval in seconds):
+#    Overrides the global refresh_interval for this service only.
+#    e.g. refresh: 5  → update every 5 seconds
+#         refresh: 300 → update every 5 minutes
+#
 # =============================================================================
 
 settings:
@@ -38,6 +62,8 @@ services:
     description: "Open-source media server"
     api_type: jellyfin
     api_key: "your-jellyfin-api-key"
+    args: "movies, series, episodes"
+    refresh: 300                  # update every 5 minutes
 
   - name: Sonarr
     url: "http://192.168.1.10:8989"
@@ -112,6 +138,8 @@ services:
     icon: "📊"
     description: "System resource monitor"
     api_type: glances
+    args: "cpu, ram, swap"
+    refresh: 5                    # update every 5 seconds
 
   - name: Grafana
     url: "http://192.168.1.10:3000"
