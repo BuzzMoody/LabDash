@@ -16,8 +16,8 @@ export async function api_proxmox(svc, timedFetch) {
 		const runningLXCs = lxcs.filter(l => l.status === 'running').length;
 
 		return [
-			{ label: 'VMs',  value: `${runningVMs} / ${vms.length} Up` },
-			{ label: 'LXCs', value: `${runningLXCs} / ${lxcs.length} Up` }
+			{ label: 'VMs',  value: `${runningVMs}/${vms.length}` },
+			{ label: 'LXCs', value: `${runningLXCs}/${lxcs.length}` }
 		];
 	} catch (err) {
 		console.error("Proxmox API Error:", err);
