@@ -2,6 +2,7 @@
 
 import { API_HANDLERS } from './api-managers/index.js';
 
+// ── Config ───────────────────────────────────────────────────────────────────
 const CONFIG = {
 	yamlPath: './services.yaml',
 	refreshInterval: 30_000,
@@ -9,6 +10,7 @@ const CONFIG = {
 	statusTimeout: 5_000,
 };
 
+// ── Category color map ────────────────────────────────────────────────────────
 const CATEGORY_COLORS = {
 	'media':          '#f472b6',
 	'downloads':      '#fbbf24',
@@ -21,6 +23,7 @@ const CATEGORY_COLORS = {
 	'security':       '#fb7185',
 };
 
+// ── State ────────────────────────────────────────────────────────────────────
 const state = {
 	services: [],
 	activeCategory: 'all',
@@ -35,18 +38,15 @@ const state = {
 	settings: {},
 };
 
-// --- Utilities ---
-
+// ── Utilities ─────────────────────────────────────────────────────────────────
 const catColor = (cat) => CATEGORY_COLORS[(cat ?? '').toLowerCase()] ?? '#94a3b8';
+const svcId    = (svc) => svc.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+const fmtNum   = (n)   => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString();
 
-const svcId = (svc) => svc.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-
-const fmtNum = (n) => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString();
-
-const debounce = (fn, ms) => {
+function debounce(fn, ms) {
 	let t;
 	return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-};
+}
 
 async function timedFetch(url, opts = {}, timeout = CONFIG.apiTimeout) {
 	const controller = new AbortController();
@@ -67,8 +67,22 @@ async function checkStatus(url) {
 	}
 }
 
-// --- Data Loading ---
+// ── Toasts ────────────────────────────────────────────────────────────────────
+function showToast(message, type = 'info') {
+	const container = document.getElementById('toast-container');
+	if (!container) return;
+	const icons = { info: 'ℹ️', success: '✅', error: '⚠️' };
+	const el = document.createElement('div');
+	el.className = `toast ${type}`;
+	el.innerHTML = `<span class="toast-icon">${icons[type] ?? 'ℹ️'}</span><span>${message}</span>`;
+	container.appendChild(el);
+	setTimeout(() => {
+		el.classList.add('hiding');
+		el.addEventListener('animationend', () => el.remove());
+	}, 4500);
+}
 
+// ── Data Loading ──────────────────────────────────────────────────────────────
 async function loadServices() {
 	try {
 		let text;
@@ -96,17 +110,85 @@ async function loadServices() {
 		return (config?.services ?? []).filter(s => s?.name && s?.url);
 	} catch (err) {
 		console.warn('[Dashboard] Could not load services.yaml:', err);
-		return []; 
+		showToast('Could not load services.yaml — showing demo services.', 'error');
+		return getDemoServices();
 	}
 }
 
-// --- Rendering Logic ---
+function getDemoServices() {
+	return [
+		{ name: 'Jellyfin',       url: 'http://localhost:8096',  category: 'Media',          icon: '🎦', description: 'Open-source media server',   api_type: 'jellyfin' },
+		{ name: 'Sonarr',         url: 'http://localhost:8989',  category: 'Media',          icon: '📺', description: 'TV show management',          api_type: 'sonarr' },
+		{ name: 'Radarr',         url: 'http://localhost:7878',  category: 'Media',          icon: '🎥', description: 'Movie management',             api_type: 'radarr' },
+		{ name: 'qBittorrent',    url: 'http://localhost:8080',  category: 'Downloads',      icon: '⬇️', description: 'Torrent client',              api_type: 'qbittorrent' },
+		{ name: 'Proxmox',        url: 'https://localhost:8006', category: 'Infrastructure', icon: '🖥️', description: 'Virtualization platform',     api_type: 'proxmox' },
+		{ name: 'Portainer',      url: 'http://localhost:9000',  category: 'Infrastructure', icon: '🐳', description: 'Container management',         api_type: 'portainer' },
+		{ name: 'Glances',        url: 'http://localhost:61208', category: 'Infrastructure', icon: '📊', description: 'System monitor',               api_type: 'glances' },
+		{ name: 'Grafana',        url: 'http://localhost:3000',  category: 'Monitoring',     icon: '📈', description: 'Metrics & dashboards',         api_type: 'grafana' },
+		{ name: 'Immich',         url: 'http://localhost:2283',  category: 'Storage',        icon: '📸', description: 'Photo backup',                 api_type: 'immich' },
+		{ name: 'Nextcloud',      url: 'http://localhost:8081',  category: 'Storage',        icon: '☁️', description: 'File sync',                   api_type: 'nextcloud' },
+		{ name: 'Pi-hole',        url: 'http://localhost',       category: 'Network',        icon: '🛡️', description: 'DNS ad blocker',              api_type: 'pihole' },
+		{ name: 'AdGuard',        url: 'http://localhost:3001',  category: 'Network',        icon: '🔒', description: 'DNS tracker blocker',          api_type: 'adguard' },
+		{ name: 'Home Assistant', url: 'http://localhost:8123',  category: 'Smart Home',     icon: '🏠', description: 'Home automation',              api_type: 'homeassistant' },
+		{ name: 'Vaultwarden',    url: 'http://localhost:8222',  category: 'Security',       icon: '🔐', description: 'Password vault' },
+	];
+}
 
+// ── Render: Category Nav ──────────────────────────────────────────────────────
+function buildCategoryNav(services) {
+	const nav = document.getElementById('cat-nav');
+	if (!nav) return;
+
+	const counts = { all: services.length };
+	services.forEach(s => {
+		const k = s.category ?? 'Other';
+		counts[k] = (counts[k] ?? 0) + 1;
+	});
+
+	const categories = [...new Set(services.map(s => s.category ?? 'Other'))].sort();
+
+	nav.innerHTML = `
+		<div class="cat-section-label">Categories</div>
+		<button class="cat-item ${state.activeCategory === 'all' ? 'active' : ''}" data-cat="all">
+			<span class="cat-dot" style="background: linear-gradient(135deg, #22d3ee, #818cf8)"></span>
+			<span class="cat-label">All Services</span>
+			<span class="cat-offline-count" style="display:none">0</span>
+			<span class="cat-count">${counts.all}</span>
+		</button>
+		${categories.map(cat => `
+			<button class="cat-item ${state.activeCategory === cat.toLowerCase() ? 'active' : ''}" data-cat="${cat.toLowerCase()}">
+				<span class="cat-dot" style="background: ${catColor(cat)}"></span>
+				<span class="cat-label">${cat}</span>
+				<span class="cat-offline-count" style="display:none">0</span>
+				<span class="cat-count">${counts[cat] ?? 0}</span>
+			</button>
+		`).join('')}
+	`;
+
+	nav.querySelectorAll('.cat-item').forEach(btn => {
+		btn.addEventListener('click', () => {
+			state.activeCategory = btn.dataset.cat;
+			state.statusFilter   = null;
+			updatePillActiveState();
+			nav.querySelectorAll('.cat-item').forEach(b => b.classList.remove('active'));
+			btn.classList.add('active');
+			const heading = document.getElementById('topbar-heading');
+			if (heading) {
+				heading.textContent = state.activeCategory === 'all'
+					? 'All Services'
+					: btn.querySelector('.cat-label').textContent.trim();
+			}
+			renderServices();
+		});
+	});
+}
+
+// ── Render: Single Card ───────────────────────────────────────────────────────
 function buildCardHTML(svc) {
-	const id = svcId(svc);
-	const color = catColor(svc.category);
+	const id     = svcId(svc);
+	const color  = catColor(svc.category);
 	const status = state.statusMap[id] ?? 'loading';
-	const stats = state.statsMap[id] ?? [];
+	const stats  = state.statsMap[id] ?? [];
 	const statusLabel = { online: 'Online', offline: 'Offline', loading: 'Checking…' }[status] ?? '—';
 
 	const statsHTML = stats.map(s => `
@@ -120,7 +202,7 @@ function buildCardHTML(svc) {
 		: (svc.icon ?? '⚙️');
 
 	return `
-		<a href="${svc.url}" target="_blank" rel="noopener noreferrer" class="service-card" id="card-${id}" style="--card-accent:${color}">
+		<a href="${svc.url}" target="_blank" rel="noopener noreferrer" class="service-card" id="card-${id}" style="--card-accent:${color}" data-cat="${(svc.category ?? '').toLowerCase()}" data-name="${svc.name.toLowerCase()}" data-desc="${(svc.description ?? '').toLowerCase()}">
 			<div class="card-stripe"></div>
 			<div class="card-body">
 				<div class="card-header">
@@ -134,44 +216,100 @@ function buildCardHTML(svc) {
 						<span class="status-text">${statusLabel}</span>
 					</div>
 				</div>
-				<p class="service-desc">${svc.description ?? ''}</p>
+				<p class="service-desc" id="desc-${id}">${svc.description ?? ''}</p>
 				<div class="service-stats" id="stats-${id}">${statsHTML}</div>
 			</div>
 			<div class="card-accent-bar"></div>
 		</a>`;
 }
 
+// ── Render: Grouped sections ──────────────────────────────────────────────────
+function renderGrouped(services) {
+	const groups = {};
+	services.forEach(s => {
+		const cat = s.category ?? 'Other';
+		if (!groups[cat]) groups[cat] = [];
+		groups[cat].push(s);
+	});
+	return Object.entries(groups)
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([cat, svcs]) => {
+			const color = catColor(cat);
+			return `
+				<div class="cat-section">
+					<div class="cat-section-header">
+						<span class="cat-section-dot" style="background:${color};box-shadow:0 0 7px ${color}80"></span>
+						<h2 class="cat-section-title" style="color:${color}">${cat}</h2>
+						<div class="cat-section-rule" style="background:${color}"></div>
+						<span class="cat-section-count" style="color:${color}">${svcs.length}</span>
+					</div>
+					<div class="cat-section-grid">
+						${svcs.map(s => buildCardHTML(s)).join('')}
+					</div>
+				</div>`;
+		}).join('');
+}
+
+// ── Render: Grid ──────────────────────────────────────────────────────────────
 function renderServices() {
-	const grid = document.getElementById('services-grid');
+	const grid       = document.getElementById('services-grid');
+	const emptyState = document.getElementById('empty-state');
 	if (!grid) return;
 
-	let filtered = state.services.filter(s => {
-		const matchesCat = state.activeCategory === 'all' || (s.category ?? '').toLowerCase() === state.activeCategory;
-		const matchesSearch = !state.searchQuery || 
-			s.name.toLowerCase().includes(state.searchQuery) || 
-			(s.category ?? '').toLowerCase().includes(state.searchQuery);
-		const matchesStatus = !state.statusFilter || (state.statusMap[svcId(s)] ?? 'loading') === state.statusFilter;
-		
-		return matchesCat && matchesSearch && matchesStatus;
+	let filtered = state.services;
+
+	if (state.activeCategory !== 'all') {
+		filtered = filtered.filter(s => (s.category ?? '').toLowerCase() === state.activeCategory);
+	}
+
+	if (state.searchQuery) {
+		const q = state.searchQuery;
+		filtered = filtered.filter(s =>
+			s.name.toLowerCase().includes(q) ||
+			(s.category ?? '').toLowerCase().includes(q) ||
+			(s.description ?? '').toLowerCase().includes(q)
+		);
+	}
+
+	if (state.statusFilter) {
+		filtered = filtered.filter(s => (state.statusMap[svcId(s)] ?? 'loading') === state.statusFilter);
+	}
+
+	if (filtered.length === 0) {
+		grid.innerHTML = '';
+		grid.classList.remove('view-grouped');
+		emptyState?.classList.remove('hidden');
+		return;
+	}
+	emptyState?.classList.add('hidden');
+
+	const grouped = state.dashView === 'grouped';
+	grid.classList.toggle('view-grouped', grouped);
+	grid.innerHTML = grouped ? renderGrouped(filtered) : filtered.map(s => buildCardHTML(s)).join('');
+
+	grid.querySelectorAll('.service-card').forEach((card, i) => {
+		card.style.animationDelay = `${i * 45}ms`;
+	});
+	grid.querySelectorAll('.service-status.online .status-text').forEach(el => {
+		el.style.animationDelay = '5s';
 	});
 
-	grid.innerHTML = filtered.map(s => buildCardHTML(s)).join('');
 	updateCounters();
 }
 
-// --- Core Updates ---
-
+// ── Update status + stats for one service ─────────────────────────────────────
 async function updateService(svc) {
 	const id = svcId(svc);
-	const online = await checkStatus(svc.endpoint ?? svc.url);
+
+	const prevStatus = state.statusMap[id];
+	const online     = await checkStatus(svc.endpoint ?? svc.url);
 	state.statusMap[id] = online ? 'online' : 'offline';
 
 	const statusEl = document.getElementById(`status-${id}`);
-	if (statusEl) {
-		const s = state.statusMap[id];
-		statusEl.className = `service-status ${s}`;
-		statusEl.querySelector('.status-dot').className = `status-dot ${s}`;
-		statusEl.querySelector('.status-text').textContent = online ? 'Online' : 'Offline';
+	if (statusEl && (prevStatus !== state.statusMap[id] || prevStatus === 'loading')) {
+		const delayAttr = online ? ' style="animation-delay:5s"' : '';
+		statusEl.className = `service-status ${online ? 'online' : 'offline'}`;
+		statusEl.innerHTML = `<span class="status-dot ${online ? 'online' : 'offline'}"></span><span class="status-text"${delayAttr}>${online ? 'Online' : 'Offline'}</span>`;
 	}
 
 	if (online && svc.api_type && API_HANDLERS[svc.api_type]) {
@@ -188,38 +326,182 @@ async function updateService(svc) {
 			}
 		}
 	}
+
 	updateCounters();
 }
 
-async function refreshAll() {
-	const btn = document.getElementById('refresh-btn');
-	btn?.classList.add('spinning');
-	await Promise.allSettled(state.services.map(updateService));
-	btn?.classList.remove('spinning');
-	state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
-}
-
+// ── Counters ──────────────────────────────────────────────────────────────────
 function updateCounters() {
-	const vals = Object.values(state.statusMap);
-	const online = vals.filter(v => v === 'online').length;
+	const vals    = Object.values(state.statusMap);
+	const online  = vals.filter(v => v === 'online').length;
 	const offline = vals.filter(v => v === 'offline').length;
 
 	const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-	setEl('count-online', online);
+	setEl('count-online',  online);
 	setEl('count-offline', offline);
-	setEl('count-total', state.services.length);
+	setEl('count-total',   state.services.length);
+
+	updatePillActiveState();
+	updateCategoryOfflineCounts();
 }
 
-// --- Initialization ---
+function updatePillActiveState() {
+	document.getElementById('pill-online') ?.classList.toggle('active', state.statusFilter === 'online');
+	document.getElementById('pill-offline')?.classList.toggle('active', state.statusFilter === 'offline');
+}
 
+function updateCategoryOfflineCounts() {
+	const offlineCounts = { all: 0 };
+	state.services.forEach(s => {
+		if (state.statusMap[svcId(s)] === 'offline') {
+			const cat = (s.category ?? 'Other').toLowerCase();
+			offlineCounts[cat] = (offlineCounts[cat] ?? 0) + 1;
+			offlineCounts.all++;
+		}
+	});
+
+	document.querySelectorAll('#cat-nav .cat-item').forEach(btn => {
+		const count = offlineCounts[btn.dataset.cat] ?? 0;
+		const el    = btn.querySelector('.cat-offline-count');
+		if (!el) return;
+		el.textContent    = count;
+		el.style.display  = count > 0 ? '' : 'none';
+	});
+}
+
+// ── Status filter (topbar pills) ──────────────────────────────────────────────
+function initFilters() {
+	const pills = { 'pill-online': 'online', 'pill-offline': 'offline', 'pill-total': null };
+	Object.entries(pills).forEach(([id, filter]) => {
+		document.getElementById(id)?.addEventListener('click', () => {
+			state.statusFilter = (filter !== null && state.statusFilter === filter) ? null : filter;
+			updatePillActiveState();
+			renderServices();
+		});
+	});
+}
+
+// ── View toggle ───────────────────────────────────────────────────────────────
+function initViewToggle() {
+	document.querySelectorAll('.view-btn').forEach(btn => {
+		btn.classList.toggle('active', btn.dataset.view === state.dashView);
+		btn.addEventListener('click', () => {
+			state.dashView = btn.dataset.view;
+			localStorage.setItem('dashView', state.dashView);
+			document.querySelectorAll('.view-btn').forEach(b =>
+				b.classList.toggle('active', b.dataset.view === state.dashView)
+			);
+			renderServices();
+		});
+	});
+}
+
+// ── Refresh ───────────────────────────────────────────────────────────────────
+async function refreshAll() {
+	const btn = document.getElementById('refresh-btn');
+	btn?.classList.add('spinning');
+
+	await Promise.allSettled(state.services.map(updateService));
+
+	btn?.classList.remove('spinning');
+
+	const now = new Date();
+	const pad = n => String(n).padStart(2, '0');
+	const el  = document.getElementById('last-updated');
+	if (el) el.textContent = `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+	state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
+}
+
+// ── Countdown ─────────────────────────────────────────────────────────────────
+function startCountdown() {
+	clearInterval(state.countdownTimer);
+	state.countdownTimer = setInterval(() => {
+		const el = document.getElementById('next-refresh');
+		if (!el || !state.nextRefreshAt) return;
+		const secs = Math.max(0, Math.ceil((state.nextRefreshAt - Date.now()) / 1000));
+		el.textContent = `↺ ${secs}s`;
+	}, 1000);
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function startClock() {
+	const el = document.getElementById('clock');
+	if (!el) return;
+	const pad    = n => String(n).padStart(2, '0');
+	const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+	const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+	function tick() {
+		const d = new Date();
+		el.textContent = `${DAYS[d.getDay()]} ${pad(d.getDate())} ${MONTHS[d.getMonth()]}  ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+	}
+	tick();
+	setInterval(tick, 1000);
+}
+
+// ── Sidebar toggle (mobile) ───────────────────────────────────────────────────
+function initSidebarToggle() {
+	const btn     = document.getElementById('sidebar-toggle');
+	const sidebar = document.getElementById('sidebar');
+	const overlay = document.getElementById('sidebar-overlay');
+	if (!btn || !sidebar) return;
+
+	function closeSidebar() {
+		sidebar.classList.remove('open');
+		overlay?.classList.remove('active');
+		document.body.classList.remove('sidebar-open');
+		btn.setAttribute('aria-expanded', 'false');
+	}
+
+	btn.addEventListener('click', () => {
+		const open = sidebar.classList.toggle('open');
+		overlay?.classList.toggle('active', open);
+		document.body.classList.toggle('sidebar-open', open);
+		btn.setAttribute('aria-expanded', open);
+	});
+
+	document.addEventListener('click', e => {
+		if (sidebar.classList.contains('open') &&
+			!sidebar.contains(e.target) &&
+			!btn.contains(e.target)) {
+			closeSidebar();
+		}
+	});
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
+	startClock();
+	initSidebarToggle();
+	initFilters();
+	initViewToggle();
+
 	state.services = await loadServices();
+
+	buildCategoryNav(state.services);
+
 	document.getElementById('loading-overlay')?.classList.add('hidden');
+	state.services.forEach(s => { state.statusMap[svcId(s)] = 'loading'; });
 	renderServices();
 
 	await refreshAll();
 
-	setInterval(refreshAll, CONFIG.refreshInterval);
+	state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
+	startCountdown();
+	state.refreshTimer = setInterval(async () => {
+		await refreshAll();
+		state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
+	}, CONFIG.refreshInterval);
+
+	document.getElementById('refresh-btn')?.addEventListener('click', async () => {
+		clearInterval(state.refreshTimer);
+		await refreshAll();
+		state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
+		state.refreshTimer = setInterval(async () => {
+			await refreshAll();
+			state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
+		}, CONFIG.refreshInterval);
+	});
 
 	document.getElementById('search')?.addEventListener('input', debounce(e => {
 		state.searchQuery = e.target.value.trim().toLowerCase();
