@@ -18,7 +18,7 @@
 #  Supported api_type values (enables rich stats on the card):
 #    qbittorrent  proxmox   glances    immich   pihole
 #    sonarr       radarr    portainer  jellyfin homeassistant
-#    nextcloud    grafana   adguard
+#    nextcloud    grafana   adguard    emby     dispatcharr
 #
 # =============================================================================
 
@@ -141,6 +141,17 @@ services:
     description: "Home automation platform"
     api_type: homeassistant
     api_key: "your-long-lived-access-token"
+
+  # ── TV ────────────────────────────────────────────────────────────────────
+  - name: Dispatcharr
+    url: "http://192.168.1.10:5656"
+    category: Media
+    logo: dispatcharr.svg
+    icon: "📡"
+    description: "IPTV channel manager"
+    api_type: dispatcharr
+    username: "your-username"
+    password: "your-password"
 
   # ── Security ──────────────────────────────────────────────────────────────
   - name: Vaultwarden
