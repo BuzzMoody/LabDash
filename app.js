@@ -411,15 +411,26 @@ function initStatsDrag(wrapper) {
 	// of mouse activity. Started/stopped by updateStatsFades via wrapper callbacks.
 	const SCROLL_SPEED = 25; // px per second
 
+	function currentOffset() {
+		// Read the live translateX from the compositor so we can resume mid-scroll
+		const matrix = new DOMMatrix(getComputedStyle(statsEl).transform);
+		return Math.abs(matrix.m41); // m41 is translateX; animation moves in negative direction
+	}
+
 	function stopScroll() {
 		statsEl.classList.remove('is-auto-scrolling');
 		statsEl.style.animationDuration = '';
+		statsEl.style.animationDelay    = '';
 		statsEl.style.removeProperty('--scroll-loop-w');
 		statsEl.querySelectorAll('[data-scroll-clone]').forEach(el => el.remove());
 	}
 
 	function startScroll() {
-		stopScroll(); // clear any previous run
+		// Snapshot position before tearing down so we can resume seamlessly
+		const resumeOffset = statsEl.classList.contains('is-auto-scrolling')
+			? currentOffset() : 0;
+
+		stopScroll();
 		if (!statsEl.classList.contains('can-scroll')) return;
 
 		// Clone chips to create a seamless double-length strip
@@ -437,9 +448,14 @@ function initStatsDrag(wrapper) {
 
 		// Measure exact start of first clone for a pixel-perfect seamless loop
 		const firstClone = statsEl.querySelector('[data-scroll-clone]');
-		const loopW = firstClone ? firstClone.offsetLeft : statsEl.scrollWidth / 2;
+		const loopW      = firstClone ? firstClone.offsetLeft : statsEl.scrollWidth / 2;
+		const duration   = loopW / SCROLL_SPEED;
+		// Negative delay seeks the animation to the equivalent pixel position
+		const delay      = -((resumeOffset % loopW) / loopW) * duration;
+
 		statsEl.style.setProperty('--scroll-loop-w', `${loopW}px`);
-		statsEl.style.animationDuration = `${loopW / SCROLL_SPEED}s`;
+		statsEl.style.animationDuration = `${duration}s`;
+		statsEl.style.animationDelay    = `${delay}s`;
 	}
 
 	// Expose start/stop so updateStatsFades can trigger them automatically
