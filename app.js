@@ -581,15 +581,17 @@ function initSidebarToggle() {
 function simpleMarkdown(md) {
 	const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 	const inline = s => {
-		const re = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g;
+		const re = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s<>"]+)/g;
 		const out = [];
 		let last = 0, m;
 		while ((m = re.exec(s)) !== null) {
 			out.push(escape(s.slice(last, m.index)));
-			const bold = m[0].match(/^\*\*(.+)\*\*$/);
-			const link = m[0].match(/^\[(.+?)\]\((.+?)\)$/);
-			if (bold) out.push(`<strong>${escape(bold[1])}</strong>`);
-			else if (link) out.push(`<a href="${link[2]}" target="_blank" rel="noopener noreferrer">${escape(link[1])}</a>`);
+			const bold    = m[0].match(/^\*\*(.+)\*\*$/);
+			const link    = m[0].match(/^\[(.+?)\]\((.+?)\)$/);
+			const bareUrl = m[0].match(/^https?:\/\//);
+			if (bold)    out.push(`<strong>${escape(bold[1])}</strong>`);
+			else if (link)    out.push(`<a href="${link[2]}" target="_blank" rel="noopener noreferrer">${escape(link[1])}</a>`);
+			else if (bareUrl) out.push(`<a href="${m[0]}" target="_blank" rel="noopener noreferrer">${escape(m[0])}</a>`);
 			last = m.index + m[0].length;
 		}
 		out.push(escape(s.slice(last)));
