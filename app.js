@@ -208,9 +208,10 @@ function buildCardHTML(svc) {
 			<span class="s-value">${s.value}</span>
 		</div>`).join('');
 
+	const fallbackIcon = svc.icon ?? '⚙️';
 	const iconHTML = svc.logo
-		? `<img src="logos/${svc.logo}" alt="${svc.name}" class="service-logo-img">`
-		: (svc.icon ?? '⚙️');
+		? `<span class="service-icon-emoji">${fallbackIcon}</span><img src="logos/${svc.logo}" alt="${svc.name}" class="service-logo-img" style="display:none" onload="this.style.display='';this.previousElementSibling.style.display='none'" onerror="this.remove()">`
+		: fallbackIcon;
 
 	return `
 		<a href="${svc.url}" target="_blank" rel="noopener noreferrer" class="service-card" id="card-${id}" style="--card-accent:${color}" data-cat="${(svc.category ?? '').toLowerCase()}" data-name="${svc.name.toLowerCase()}" data-desc="${(svc.description ?? '').toLowerCase()}">
