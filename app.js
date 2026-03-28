@@ -10,7 +10,6 @@ const CONFIG = {
 	statusTimeout: 5_000,
 };
 
-// ── Category color map ────────────────────────────────────────────────────────
 const CATEGORY_COLORS = {
 	'media':          '#f472b6',
 	'downloads':      '#fbbf24',
@@ -261,7 +260,6 @@ function renderGrouped(services) {
 		}).join('');
 }
 
-// ── Render: Grid ──────────────────────────────────────────────────────────────
 function renderServices() {
 	const grid       = document.getElementById('services-grid');
 	const emptyState = document.getElementById('empty-state');
