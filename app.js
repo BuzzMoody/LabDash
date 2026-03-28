@@ -378,6 +378,12 @@ function setLastUpdated() {
 // ── Stats scroll + drag ───────────────────────────────────────────────────────
 const statsDrag = { el: null, startX: 0, startScroll: 0 };
 
+// Capture-phase click blocker — attached once per stats mousedown, auto-removes after first click
+function blockNextClick(e) {
+	e.preventDefault();
+	e.stopPropagation();
+}
+
 function updateStatsFades(statsEl) {
 	const wrapper = statsEl?.parentElement;
 	if (!wrapper) return;
@@ -405,6 +411,10 @@ function initStatsDrag(wrapper) {
 		statsDrag.startScroll = statsEl.scrollLeft;
 		statsEl.classList.add('is-dragging');
 		e.preventDefault();
+		// Block the next click at document level (capture phase) so releasing
+		// anywhere on the card — inside or outside the stats wrapper — never
+		// triggers the <a> link navigation.
+		document.addEventListener('click', blockNextClick, { capture: true, once: true });
 	});
 
 	// Update fades on native scroll (covers touch swipe)

@@ -800,6 +800,8 @@ body {
 /* Live stats area */
 .stats-scroll-wrapper {
   position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 .service-stats {
   display: flex;
@@ -821,19 +823,21 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 32px;
+  width: 20px;
   pointer-events: none;
   z-index: 1;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
 .stats-fade.visible { opacity: 1; }
-.stats-fade-l { left:  0; background: linear-gradient(to right, var(--bg), transparent); }
-.stats-fade-r { right: 0; background: linear-gradient(to left,  var(--bg), transparent); }
+.stats-fade-l { left:  0; background: linear-gradient(to right, rgba(255,255,255,0.12), transparent); }
+.stats-fade-r { right: 0; background: linear-gradient(to left,  rgba(255,255,255,0.12), transparent); }
 
 .stat-chip {
   display: flex;
   align-items: baseline;
+  flex-shrink: 0;
+  white-space: nowrap;
   gap: 0.35rem;
   padding: 0.3rem 0.6rem;
   border-radius: var(--radius-sm);
