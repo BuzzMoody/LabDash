@@ -1,0 +1,61 @@
+# nginx configuration for LabDash
+# PORT placeholder is replaced by entrypoint.sh at container start.
+
+user www-data;
+worker_processes 1;
+worker_rlimit_nofile 256;
+
+error_log /dev/stderr warn;
+pid       /tmp/nginx.pid;
+
+events {
+    worker_connections 64;
+}
+
+http {
+    include      /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    access_log /dev/stdout;
+
+    sendfile      on;
+    tcp_nopush    on;
+    keepalive_timeout 15;
+    server_tokens off;
+
+    # PHP-FPM upstream
+    upstream php_fpm {
+        server 127.0.0.1:9000;
+    }
+
+    server {
+        listen LABDASH_PORT;
+        root  /var/www/html;
+        index index.php;
+
+        # Static assets served directly — PHP never touched
+        location ~* \.(css|js|svg|png|jpg|jpeg|gif|ico|woff2?)$ {
+            try_files $uri =404;
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # PHP — only the three entry points are reachable
+        location ~ ^/(index|ping|batch-ping)\.php$ {
+            fastcgi_pass         php_fpm;
+            fastcgi_index        index.php;
+            include              fastcgi_params;
+            fastcgi_param        SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_read_timeout 10;
+        }
+
+        # Block all other .php files
+        location ~ \.php$ {
+            return 404;
+        }
+
+        location / {
+            try_files $uri $uri/ /index.php;
+        }
+    }
+}

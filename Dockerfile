@@ -1,12 +1,16 @@
 # =============================================================================
 #  Homelab Dashboard — Dockerfile
-#  Lightweight PHP CLI + built-in server on Alpine
+#  nginx + PHP-FPM on Alpine for production-grade request handling.
+#  Replaces the PHP built-in server which forked a process per request.
 # =============================================================================
 
-FROM php:8.5-cli-alpine
+FROM php:8.5-fpm-alpine
 
-# Install wget to grab js-yaml at build time (removed afterwards)
-RUN apk add --no-cache wget \
+# Install nginx + libcurl (runtime), build PHP curl extension, then clean up
+RUN apk add --no-cache nginx libcurl wget \
+ && apk add --no-cache --virtual .build-deps curl-dev \
+ && docker-php-ext-install curl \
+ && apk del .build-deps \
  && wget -q -O /tmp/js-yaml.min.js \
         https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js \
  && apk del wget
@@ -16,6 +20,7 @@ RUN mkdir -p /var/www/html
 
 COPY index.php          /var/www/html/index.php
 COPY ping.php           /var/www/html/ping.php
+COPY batch-ping.php     /var/www/html/batch-ping.php
 COPY styles.css         /var/www/html/styles.css
 COPY app.js             /var/www/html/app.js
 COPY VERSION            /var/www/html/VERSION
@@ -33,6 +38,12 @@ COPY example.services.yaml /usr/local/share/dashboard/example.services.yaml
 #    /config/logos/         ← optional logo images (web-accessible via symlink)
 RUN mkdir -p /config/logos
 
+# ── nginx config template (PORT substituted at container start) ───────────────
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+
+# ── PHP-FPM pool config (static 4-worker pool) ────────────────────────────────
+COPY php-fpm-www.conf /usr/local/etc/php-fpm.d/www.conf
+
 # ── Permissions ───────────────────────────────────────────────────────────────
 RUN chown -R www-data:www-data /var/www/html /config
 
@@ -41,6 +52,7 @@ ENV PORT=6969
 # ── Beta mode: disables caching (baked in at build time, overridable at runtime)
 ARG BETA=false
 ENV BETA=${BETA}
+
 EXPOSE 6969
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────

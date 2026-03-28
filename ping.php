@@ -1,8 +1,8 @@
 <?php
-// ── Status-check proxy ────────────────────────────────────────────────────────
-// Called by app.js to check whether a service is reachable.
-// PHP makes the request server-side so the real HTTP status code is always
-// readable — no CORS limitations, no opaque responses.
+// ── Status-check proxy (single URL) ───────────────────────────────────────────
+// Called by app.js as a fallback when batch-ping.php is unavailable.
+// Uses a HEAD request via curl — no response body downloaded, much lighter
+// than the old file_get_contents approach.
 //
 // Usage:  GET /ping.php?url=<encoded-url>
 // Returns: { "status": <int> }   (0 = could not connect)
@@ -20,27 +20,33 @@ if (!in_array($scheme, ['http', 'https'], true)) {
     exit;
 }
 
-$ctx = stream_context_create([
-    'http' => [
-        'method'        => 'GET',
-        'timeout'       => 4.5,
-        'ignore_errors' => true,   // don't throw on 4xx / 5xx — we want the status
-        'max_redirects' => 2,
-        'header'        => "User-Agent: LabDash/1.0 (status-check)\r\n",
-    ],
-    'ssl' => [
-        'verify_peer'      => false,
-        'verify_peer_name' => false,
-    ],
-]);
-
-@file_get_contents($url, false, $ctx);
-
-$status = 0;
-if (!empty($http_response_header) &&
-    preg_match('#HTTP/\S+\s+(\d+)#', $http_response_header[0], $m)) {
-    $status = (int) $m[1];
+// ── File-based cache (5 s TTL) — shared across all PHP-FPM workers ────────────
+$cacheFile = sys_get_temp_dir() . '/lbd_' . md5($url) . '.json';
+if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 5) {
+    header('Content-Type: application/json');
+    readfile($cacheFile);
+    exit;
 }
 
+// ── HEAD request via curl — only fetches headers, never the body ──────────────
+$ch = curl_init($url);
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_NOBODY         => true,
+    CURLOPT_TIMEOUT        => 5,
+    CURLOPT_CONNECTTIMEOUT => 3,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_MAXREDIRS      => 2,
+    CURLOPT_SSL_VERIFYPEER => false,
+    CURLOPT_SSL_VERIFYHOST => false,
+    CURLOPT_USERAGENT      => 'LabDash/1.0 (status-check)',
+]);
+curl_exec($ch);
+$status = (int)(curl_getinfo($ch, CURLINFO_HTTP_CODE) ?? 0);
+curl_close($ch);
+
+$json = json_encode(['status' => $status]);
+file_put_contents($cacheFile, $json);
+
 header('Content-Type: application/json');
-echo json_encode(['status' => $status]);
+echo $json;

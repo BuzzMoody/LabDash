@@ -22,7 +22,13 @@ mkdir -p "${LOGOS_DIR}"
 # (services.yaml stays in /config — NOT in web root — so it's never served)
 ln -sf "${LOGOS_DIR}" "${WEB_ROOT}/logos"
 
-# ── Start PHP built-in server ─────────────────────────────────────────────────
+# ── Template nginx config with current PORT ───────────────────────────────────
 PORT="${PORT:-6969}"
+sed "s/LABDASH_PORT/${PORT}/g" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+
+# ── Start PHP-FPM in the background ───────────────────────────────────────────
+php-fpm -D
+
+# ── Start nginx in the foreground (Docker PID 1) ──────────────────────────────
 echo "[dashboard] Listening on http://0.0.0.0:${PORT}"
-exec php -S "0.0.0.0:${PORT}" -t "${WEB_ROOT}"
+exec nginx -g 'daemon off;'
