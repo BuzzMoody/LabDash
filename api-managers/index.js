@@ -11,6 +11,11 @@ import { api_jellyfin } from './jellyfin.js';
 import { api_nextcloud } from './nextcloud.js';
 import { api_grafana } from './grafana.js';
 import { api_adguard } from './adguard.js';
+import { api_emby } from './emby.js';
+import { api_dispatcharr } from './dispatcharr.js';
+import { api_nginxproxymanager } from './nginxproxymanager.js';
+import { api_vaultwarden } from './vaultwarden.js';
+import { api_speedtesttracker } from './speedtesttracker.js';
 
 export const API_HANDLERS = {
 	qbittorrent:   api_qbittorrent,
@@ -26,4 +31,9 @@ export const API_HANDLERS = {
 	nextcloud:     api_nextcloud,
 	grafana:       api_grafana,
 	adguard:       api_adguard,
+	emby:          api_emby,
+	dispatcharr:        api_dispatcharr,
+	nginxproxymanager:  api_nginxproxymanager,
+	vaultwarden:        api_vaultwarden,
+	speedtesttracker:   api_speedtesttracker,
 };

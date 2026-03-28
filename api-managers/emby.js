@@ -1,4 +1,4 @@
-export async function api_jellyfin(svc, timedFetch, utils) {
+export async function api_emby(svc, timedFetch, utils) {
 	const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
 	if (!args.length) return null;
 
@@ -18,7 +18,7 @@ export async function api_jellyfin(svc, timedFetch, utils) {
 
 		return args.map(a => available[a]?.()).filter(Boolean);
 	} catch (err) {
-		console.error(`[Jellyfin API] Error fetching stats:`, err);
+		console.error(`[Emby API] Error fetching stats:`, err);
 		return null;
 	}
 }

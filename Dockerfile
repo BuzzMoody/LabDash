@@ -14,10 +14,11 @@ RUN apk add --no-cache wget \
 # ── Web root ──────────────────────────────────────────────────────────────────
 RUN mkdir -p /var/www/html
 
-COPY index.php    /var/www/html/index.php
-COPY styles.css   /var/www/html/styles.css
-COPY app.js       /var/www/html/app.js
-COPY VERSION      /var/www/html/VERSION
+COPY index.php      /var/www/html/index.php
+COPY styles.css     /var/www/html/styles.css
+COPY app.js         /var/www/html/app.js
+COPY VERSION        /var/www/html/VERSION
+COPY api-managers/  /var/www/html/api-managers/
 RUN  cp /tmp/js-yaml.min.js /var/www/html/js-yaml.min.js && rm /tmp/js-yaml.min.js
 
 # ── Example config (copied to /config on first run if absent) ─────────────────

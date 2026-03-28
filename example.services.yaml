@@ -18,7 +18,35 @@
 #  Supported api_type values (enables rich stats on the card):
 #    qbittorrent  proxmox   glances    immich   pihole
 #    sonarr       radarr    portainer  jellyfin homeassistant
-#    nextcloud    grafana   adguard
+#    nextcloud    grafana   adguard    emby     dispatcharr
+#    nginxproxymanager
+#
+#  args field (controls which stats are shown on the card):
+#    Comma-separated list of stat keys for the api_type. If omitted, no stats
+#    are shown. Available keys per type:
+#      qbittorrent:  active, dl, ul
+#      proxmox:      vms, lxcs
+#      glances:      cpu, ram, swap, load
+#      immich:       photos, videos, usage
+#      pihole:       total, blocked, percent_blocked, frequency
+#      sonarr:       series, monitored
+#      radarr:       movies, downloaded
+#      portainer:    endpoints, running, stacks
+#      jellyfin:     movies, series, episodes
+#      homeassistant: entities, active
+#      nextcloud:    files, users, php
+#      grafana:      dashboards, sources
+#      adguard:      blocked, queries
+#      emby:         movies, series, episodes
+#      dispatcharr:       channels
+#      nginxproxymanager: proxy, redirection, stream, dead, certs, version
+#      vaultwarden:       version
+#      speedtesttracker:  ping, download, upload
+#
+#  refresh field (per-service refresh interval in seconds):
+#    Overrides the global refresh_interval for this service only.
+#    e.g. refresh: 5  → update every 5 seconds
+#         refresh: 300 → update every 5 minutes
 #
 # =============================================================================
 
@@ -38,6 +66,8 @@ services:
     description: "Open-source media server"
     api_type: jellyfin
     api_key: "your-jellyfin-api-key"
+    args: "movies, series, episodes"
+    refresh: 300                  # update every 5 minutes
 
   - name: Sonarr
     url: "http://192.168.1.10:8989"
@@ -112,6 +142,8 @@ services:
     icon: "📊"
     description: "System resource monitor"
     api_type: glances
+    args: "cpu, ram, swap"
+    refresh: 5                    # update every 5 seconds
 
   - name: Grafana
     url: "http://192.168.1.10:3000"
@@ -142,6 +174,28 @@ services:
     api_type: homeassistant
     api_key: "your-long-lived-access-token"
 
+  # ── TV ────────────────────────────────────────────────────────────────────
+  - name: Dispatcharr
+    url: "http://192.168.1.10:5656"
+    category: Media
+    logo: dispatcharr.svg
+    icon: "📡"
+    description: "IPTV channel manager"
+    api_type: dispatcharr
+    username: "your-username"
+    password: "your-password"
+
+  - name: Nginx Proxy Manager
+    url: "http://192.168.1.10:81"
+    category: Network
+    logo: nginx-proxy-manager.svg
+    icon: "🔀"
+    description: "Reverse proxy with SSL"
+    api_type: nginxproxymanager
+    username: "your-npm-email"
+    password: "your-npm-password"
+    args: "proxy, certs, version"
+
   # ── Security ──────────────────────────────────────────────────────────────
   - name: Vaultwarden
     url: "http://192.168.1.10:8222"
@@ -149,3 +203,5 @@ services:
     logo: bitwarden.svg
     icon: "🔐"
     description: "Self-hosted password vault"
+    api_type: vaultwarden
+    args: "version"

@@ -196,6 +196,6 @@ header('Expires: 0');
   <div id="sidebar-overlay"></div>
   <div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
-  <script src="app.js?v=<?= filemtime(__DIR__.'/app.js') ?>"></script>
+  <script type="module" src="app.js?v=<?= filemtime(__DIR__.'/app.js') ?>"></script>
 </body>
 </html>

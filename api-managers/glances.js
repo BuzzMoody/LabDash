@@ -1,20 +1,20 @@
 export async function api_glances(svc, timedFetch) {
+	const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+	if (!args.length) return null;
+
 	try {
 		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const [cpuR, memR, loadR] = await Promise.all([
-			timedFetch(`${b}/api/3/cpu`),
-			timedFetch(`${b}/api/3/mem`),
-			timedFetch(`${b}/api/3/load`),
-		]);
-		if (!cpuR.ok || !memR.ok) return null;
-		const cpu = await cpuR.json();
-		const mem = await memR.json();
-		const load = loadR.ok ? await loadR.json() : null;
-		const stats = [
-			{ label: 'CPU',  value: `${parseFloat(cpu.total).toFixed(1)}%` },
-			{ label: 'RAM',  value: `${parseFloat(mem.percent).toFixed(1)}%` },
-		];
-		if (load?.min1 != null) stats.push({ label: 'Load', value: load.min1.toFixed(2) });
-		return stats;
+		const r = await timedFetch(`${b}/api/4/quicklook`);
+		if (!r.ok) return null;
+		const d = await r.json();
+
+		const available = {
+			cpu:  () => ({ label: 'CPU',  value: `${parseFloat(d.cpu).toFixed(1)}%` }),
+			ram:  () => ({ label: 'RAM',  value: `${parseFloat(d.mem).toFixed(1)}%` }),
+			swap: () => d.swap != null ? { label: 'Swap', value: `${parseFloat(d.swap).toFixed(1)}%` } : null,
+			load: () => d.load != null ? { label: 'Load', value: parseFloat(d.load).toFixed(1) } : null,
+		};
+
+		return args.map(a => available[a]?.()).filter(Boolean);
 	} catch { return null; }
 }
