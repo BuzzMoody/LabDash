@@ -2,7 +2,7 @@
 
 A clean, fast, self-hosted homelab dashboard. Monitor all your services at a glance with real-time status checks and live stats pulled directly from each service's API.
 
-![LabDash Preview](preview.png)
+![LabDash Preview](labdash-preview.png)
 
 > **Security notice:** LabDash is designed for use on your **internal/local network only**. The `services.yaml` configuration file contains API keys, usernames, and passwords in plain text. Do not expose this dashboard to the public internet.
 
@@ -42,13 +42,13 @@ On first run an example `services.yaml` is automatically created at `./config/se
 docker compose restart
 ```
 
-### Pulling from Docker Hub
+### Pulling from the container registry
 
 ```yaml
 services:
-  dashboard:
-    image: buzzmoody/homelab-dash:beta   # or :latest for stable
-    container_name: homelab-dash
+  labdash:
+    image: ghcr.io/buzzmoody/labdash:latest
+    container_name: LabDash
     ports:
       - "6969:6969"
     volumes:
