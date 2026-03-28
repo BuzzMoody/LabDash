@@ -335,7 +335,8 @@ async function updateService(svc, statusOverride = null) {
 		} else {
 			const now       = Date.now();
 			const lastCheck = state.lastStatusCheck[id] ?? 0;
-			if (now - lastCheck >= CONFIG.statusInterval || prevStatus === 'loading') {
+			// Always re-ping offline services — never cache a down state
+			if (now - lastCheck >= CONFIG.statusInterval || prevStatus === 'loading' || prevStatus === 'offline') {
 				// Ping is due
 				online = await checkStatus(svc.endpoint ?? svc.url);
 				state.lastStatusCheck[id] = now;
@@ -616,10 +617,11 @@ async function refreshAll() {
 	await Promise.allSettled(state.services.map(svc => {
 		const url    = svc.endpoint ?? svc.url;
 		const code   = batchResults[url];
-		// null → batch failed for this URL → updateService will ping individually
-		const online = (code == null)
+		// code 0 means HEAD not supported or no response — treat as unknown
+		// so updateService falls back to an individual GET ping
+		const online = (code == null || code === 0)
 			? null
-			: (code !== 0 && code !== 502 && code !== 503 && code !== 504);
+			: (code !== 502 && code !== 503 && code !== 504);
 		return updateService(svc, online);
 	}));
 
