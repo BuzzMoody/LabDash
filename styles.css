@@ -974,6 +974,14 @@ body {
 .stats-fade-l { left:  0; background: linear-gradient(to right, rgba(255,255,255,0.12), transparent); }
 .stats-fade-r { right: 0; background: linear-gradient(to left,  rgba(255,255,255,0.12), transparent); }
 
+@keyframes stats-hint-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+.service-card:hover .stats-fade-r.visible {
+  animation: stats-hint-pulse 0.94s 0.38s ease-in-out;
+}
+
 .stat-chip {
   display: flex;
   align-items: baseline;

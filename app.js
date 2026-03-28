@@ -395,8 +395,39 @@ function updateStatsFades(statsEl) {
 
 function initStatsDrag(wrapper) {
 	const statsEl = wrapper.querySelector('.service-stats');
+	const card    = wrapper.closest('.service-card');
 	if (!statsEl) return;
 
+	// ── Scroll-peek hint ───────────────────────────────────────────────────────
+	let peekTimer = null, returnTimer = null;
+	function cancelHint() {
+		clearTimeout(peekTimer);
+		clearTimeout(returnTimer);
+		peekTimer = returnTimer = null;
+	}
+
+	if (card) {
+		card.addEventListener('mouseenter', () => {
+			if (!statsEl.classList.contains('can-scroll')) return;
+			if (statsEl.scrollLeft > 2) return; // user already scrolled — don't interfere
+			peekTimer = setTimeout(() => {
+				statsEl.scrollTo({ left: 52, behavior: 'smooth' });
+				returnTimer = setTimeout(() => {
+					statsEl.scrollTo({ left: 0, behavior: 'smooth' });
+				}, 560);
+			}, 380);
+		});
+
+		card.addEventListener('mouseleave', () => {
+			cancelHint();
+			// Glide back if the peek is still in progress
+			if (statsEl.scrollLeft > 0 && statsEl.scrollLeft <= 56) {
+				statsEl.scrollTo({ left: 0, behavior: 'smooth' });
+			}
+		});
+	}
+
+	// ── Drag ──────────────────────────────────────────────────────────────────
 	// Prevent clicks on the stats area from bubbling up to the <a> card link
 	wrapper.addEventListener('click', e => {
 		e.preventDefault();
@@ -404,6 +435,7 @@ function initStatsDrag(wrapper) {
 	});
 
 	statsEl.addEventListener('mousedown', e => {
+		cancelHint(); // don't let hint interfere with a deliberate drag
 		statsDrag.el          = statsEl;
 		statsDrag.startX      = e.clientX;
 		statsDrag.startScroll = statsEl.scrollLeft;
