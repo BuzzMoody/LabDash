@@ -27,7 +27,7 @@
 #      proxmox:      vms, lxcs
 #      glances:      cpu, ram, swap, load
 #      immich:       photos, videos, usage
-#      pihole:       blocked, queries, status
+#      pihole:       total, blocked, percent_blocked, frequency
 #      sonarr:       series, monitored
 #      radarr:       movies, downloaded
 #      portainer:    endpoints, running, stacks
