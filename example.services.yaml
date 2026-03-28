@@ -37,7 +37,8 @@
 #      grafana:      dashboards, sources
 #      adguard:      blocked, queries
 #      emby:         movies, series, episodes
-#      dispatcharr:  channels
+#      dispatcharr:       channels
+      nginxproxymanager: proxy, redirection, stream, dead, certs, version
 #
 #  refresh field (per-service refresh interval in seconds):
 #    Overrides the global refresh_interval for this service only.
@@ -180,6 +181,17 @@ services:
     api_type: dispatcharr
     username: "your-username"
     password: "your-password"
+
+  - name: Nginx Proxy Manager
+    url: "http://192.168.1.10:81"
+    category: Network
+    logo: nginx-proxy-manager.svg
+    icon: "🔀"
+    description: "Reverse proxy with SSL"
+    api_type: nginxproxymanager
+    username: "your-npm-email"
+    password: "your-npm-password"
+    args: "proxy, certs, version"
 
   # ── Security ──────────────────────────────────────────────────────────────
   - name: Vaultwarden

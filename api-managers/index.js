@@ -13,6 +13,7 @@ import { api_grafana } from './grafana.js';
 import { api_adguard } from './adguard.js';
 import { api_emby } from './emby.js';
 import { api_dispatcharr } from './dispatcharr.js';
+import { api_nginxproxymanager } from './nginxproxymanager.js';
 
 export const API_HANDLERS = {
 	qbittorrent:   api_qbittorrent,
@@ -29,5 +30,6 @@ export const API_HANDLERS = {
 	grafana:       api_grafana,
 	adguard:       api_adguard,
 	emby:          api_emby,
-	dispatcharr:   api_dispatcharr,
+	dispatcharr:        api_dispatcharr,
+	nginxproxymanager:  api_nginxproxymanager,
 };
