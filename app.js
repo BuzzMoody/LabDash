@@ -404,32 +404,62 @@ function initStatsDrag(wrapper) {
 	if (!statsEl) return;
 
 	// ── Scroll-peek hint ───────────────────────────────────────────────────────
-	let peekTimer = null, returnTimer = null;
+	// Four-phase rAF animation:
+	//   1. ease-in-quart   — lazy crawl that accelerates (0 → peak)
+	//   2. ease-out-cubic  — sharp whip back              (peak → 0)
+	//   3. sine half-wave  — small bounce overshoot        (0 → 9px)
+	//   4. ease-in settle  — snaps back to rest            (9px → 0)
+	const PEEK_PHASES = [
+		{ ms: 430, from: 0,  to: 55, ease: t => t * t * t * t },
+		{ ms: 310, from: 55, to: 0,  ease: t => 1 - Math.pow(1 - t, 3) },
+		{ ms: 115, from: 0,  to: 9,  ease: t => Math.sin(t * Math.PI) },
+		{ ms: 135, from: 9,  to: 0,  ease: t => t * t },
+	];
+
+	let hintTimer = null;
+	const hint    = { live: false };
+
+	function runHintAnimation() {
+		let phase     = 0;
+		let phaseStart = null;
+
+		function step(ts) {
+			if (!hint.live) return;
+			if (!phaseStart) phaseStart = ts;
+			const p = PEEK_PHASES[phase];
+			const t = Math.min((ts - phaseStart) / p.ms, 1);
+			statsEl.scrollLeft = p.from + (p.to - p.from) * p.ease(t);
+			updateStatsFades(statsEl);
+			if (t < 1) {
+				requestAnimationFrame(step);
+			} else if (phase < PEEK_PHASES.length - 1) {
+				phase++;
+				phaseStart = ts;
+				requestAnimationFrame(step);
+			}
+		}
+		requestAnimationFrame(step);
+	}
+
 	function cancelHint() {
-		clearTimeout(peekTimer);
-		clearTimeout(returnTimer);
-		peekTimer = returnTimer = null;
+		hint.live = false;
+		clearTimeout(hintTimer);
+		if (statsEl.scrollLeft > 0 && statsEl.scrollLeft < 64) {
+			statsEl.scrollTo({ left: 0, behavior: 'smooth' });
+		}
 	}
 
 	if (card) {
 		card.addEventListener('mouseenter', () => {
 			if (!statsEl.classList.contains('can-scroll')) return;
-			if (statsEl.scrollLeft > 2) return; // user already scrolled — don't interfere
-			peekTimer = setTimeout(() => {
-				statsEl.scrollTo({ left: 52, behavior: 'smooth' });
-				returnTimer = setTimeout(() => {
-					statsEl.scrollTo({ left: 0, behavior: 'smooth' });
-				}, 560);
-			}, 380);
+			if (statsEl.scrollLeft > 2) return;
+			hint.live = true;
+			hintTimer = setTimeout(() => {
+				if (hint.live) runHintAnimation();
+			}, 360);
 		});
 
-		card.addEventListener('mouseleave', () => {
-			cancelHint();
-			// Glide back if the peek is still in progress
-			if (statsEl.scrollLeft > 0 && statsEl.scrollLeft <= 56) {
-				statsEl.scrollTo({ left: 0, behavior: 'smooth' });
-			}
-		});
+		card.addEventListener('mouseleave', cancelHint);
 	}
 
 	// ── Drag ──────────────────────────────────────────────────────────────────
