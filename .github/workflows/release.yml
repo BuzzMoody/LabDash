@@ -121,6 +121,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/buzzmoody/labdash:latest
+            ghcr.io/buzzmoody/labdash:beta
             ghcr.io/buzzmoody/labdash:v${{ steps.next.outputs.version }}
           labels: |
             org.opencontainers.image.title=LabDash

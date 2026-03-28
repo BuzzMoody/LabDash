@@ -865,6 +865,7 @@ body {
 }
 #services-grid.view-grouped .service-category-badge { display: none; }
 #services-grid.view-grouped .card-header { align-items: center; }
+#services-grid:not(.view-grouped) .card-header { align-items: flex-end; }
 
 .service-category-badge {
   display: inline-flex;
@@ -972,6 +973,7 @@ body {
 .stats-fade.visible { opacity: 1; }
 .stats-fade-l { left:  0; background: linear-gradient(to right, rgba(255,255,255,0.12), transparent); }
 .stats-fade-r { right: 0; background: linear-gradient(to left,  rgba(255,255,255,0.12), transparent); }
+
 
 .stat-chip {
   display: flex;

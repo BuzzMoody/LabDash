@@ -66,7 +66,12 @@ async function timedFetch(url, opts = {}, timeout = CONFIG.apiTimeout) {
 
 async function checkStatus(url) {
 	try {
-		await timedFetch(url, { mode: 'no-cors' }, CONFIG.statusTimeout);
+		// Proxy the check through PHP — server-side requests have no CORS
+		// restrictions so we always get the real HTTP status code (incl. 502).
+		const res  = await timedFetch(`/ping.php?url=${encodeURIComponent(url)}`, {}, CONFIG.statusTimeout);
+		const data = await res.json();
+		// status 0 means PHP couldn't reach the host at all
+		if (!data.status || data.status === 502 || data.status === 503 || data.status === 504) return false;
 		return true;
 	} catch {
 		return false;
@@ -395,8 +400,69 @@ function updateStatsFades(statsEl) {
 
 function initStatsDrag(wrapper) {
 	const statsEl = wrapper.querySelector('.service-stats');
+	const card    = wrapper.closest('.service-card');
 	if (!statsEl) return;
 
+	// ── Scroll-peek hint ───────────────────────────────────────────────────────
+	// Four-phase rAF animation:
+	//   1. ease-in-quart   — lazy crawl that accelerates (0 → peak)
+	//   2. ease-out-cubic  — sharp whip back              (peak → 0)
+	//   3. sine half-wave  — small bounce overshoot        (0 → 9px)
+	//   4. ease-in settle  — snaps back to rest            (9px → 0)
+	const PEEK_PHASES = [
+		{ ms: 430, from: 0,  to: 55, ease: t => t * t * t * t },
+		{ ms: 310, from: 55, to: 0,  ease: t => 1 - Math.pow(1 - t, 3) },
+		{ ms: 115, from: 0,  to: 9,  ease: t => Math.sin(t * Math.PI) },
+		{ ms: 135, from: 9,  to: 0,  ease: t => t * t },
+	];
+
+	let hintTimer = null;
+	const hint    = { live: false };
+
+	function runHintAnimation() {
+		let phase     = 0;
+		let phaseStart = null;
+
+		function step(ts) {
+			if (!hint.live) return;
+			if (!phaseStart) phaseStart = ts;
+			const p = PEEK_PHASES[phase];
+			const t = Math.min((ts - phaseStart) / p.ms, 1);
+			statsEl.scrollLeft = p.from + (p.to - p.from) * p.ease(t);
+			updateStatsFades(statsEl);
+			if (t < 1) {
+				requestAnimationFrame(step);
+			} else if (phase < PEEK_PHASES.length - 1) {
+				phase++;
+				phaseStart = ts;
+				requestAnimationFrame(step);
+			}
+		}
+		requestAnimationFrame(step);
+	}
+
+	function cancelHint() {
+		hint.live = false;
+		clearTimeout(hintTimer);
+		if (statsEl.scrollLeft > 0 && statsEl.scrollLeft < 64) {
+			statsEl.scrollTo({ left: 0, behavior: 'smooth' });
+		}
+	}
+
+	if (card) {
+		card.addEventListener('mouseenter', () => {
+			if (!statsEl.classList.contains('can-scroll')) return;
+			if (statsEl.scrollLeft > 2) return;
+			hint.live = true;
+			hintTimer = setTimeout(() => {
+				if (hint.live) runHintAnimation();
+			}, 360);
+		});
+
+		card.addEventListener('mouseleave', cancelHint);
+	}
+
+	// ── Drag ──────────────────────────────────────────────────────────────────
 	// Prevent clicks on the stats area from bubbling up to the <a> card link
 	wrapper.addEventListener('click', e => {
 		e.preventDefault();
@@ -404,6 +470,7 @@ function initStatsDrag(wrapper) {
 	});
 
 	statsEl.addEventListener('mousedown', e => {
+		cancelHint(); // don't let hint interfere with a deliberate drag
 		statsDrag.el          = statsEl;
 		statsDrag.startX      = e.clientX;
 		statsDrag.startScroll = statsEl.scrollLeft;
