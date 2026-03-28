@@ -107,8 +107,8 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/labdash:latest
-            ghcr.io/${{ github.repository_owner }}/labdash:v${{ steps.next.outputs.version }}
+            ghcr.io/buzzmoody/labdash:latest
+            ghcr.io/buzzmoody/labdash:v${{ steps.next.outputs.version }}
           labels: |
             org.opencontainers.image.title=LabDash
             org.opencontainers.image.description=Self-hosted homelab dashboard
