@@ -956,8 +956,6 @@ body {
   -webkit-user-select: none;
 }
 .service-stats::-webkit-scrollbar { display: none; }
-.service-stats.can-scroll  { cursor: grab; }
-.service-stats.is-dragging { cursor: grabbing !important; }
 .service-stats:empty { display: none; }
 
 /* Infinite scroll — CSS animation runs on compositor thread (no rAF throttle) */

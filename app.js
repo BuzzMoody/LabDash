@@ -382,14 +382,7 @@ function setLastUpdated() {
 	el.textContent = `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
-// ── Stats scroll + drag ───────────────────────────────────────────────────────
-const statsDrag = { el: null, startX: 0, startScroll: 0 };
-
-// Capture-phase click blocker — attached once per stats mousedown, auto-removes after first click
-function blockNextClick(e) {
-	e.preventDefault();
-	e.stopPropagation();
-}
+// ── Stats scroll ─────────────────────────────────────────────────────────────
 
 function updateStatsFades(statsEl) {
 	const wrapper = statsEl?.parentElement;
@@ -424,7 +417,7 @@ function initStatsDrag(wrapper) {
 	// Clones chips to form a seamless double-length strip, then applies a CSS
 	// @keyframes animation so Chrome always runs it at full frame rate regardless
 	// of mouse activity. Started/stopped by updateStatsFades via wrapper callbacks.
-	const SCROLL_SPEED = 45; // px per second
+	const SCROLL_SPEED = 25; // px per second
 
 	function stopScroll() {
 		statsEl.classList.remove('is-auto-scrolling');
@@ -460,29 +453,6 @@ function initStatsDrag(wrapper) {
 	// Expose start/stop so updateStatsFades can trigger them automatically
 	wrapper._startScroll = startScroll;
 	wrapper._stopScroll  = stopScroll;
-
-	// ── Drag ──────────────────────────────────────────────────────────────────
-	// Prevent clicks on the stats area from bubbling up to the <a> card link
-	wrapper.addEventListener('click', e => {
-		e.preventDefault();
-		e.stopPropagation();
-	});
-
-	statsEl.addEventListener('mousedown', e => {
-		stopScroll(); // cancel auto-scroll when user starts dragging
-		statsDrag.el          = statsEl;
-		statsDrag.startX      = e.clientX;
-		statsDrag.startScroll = statsEl.scrollLeft;
-		statsEl.classList.add('is-dragging');
-		e.preventDefault();
-		// Block the next click at document level (capture phase) so releasing
-		// anywhere on the card — inside or outside the stats wrapper — never
-		// triggers the <a> link navigation.
-		document.addEventListener('click', blockNextClick, { capture: true, once: true });
-	});
-
-	// Update fades on native scroll (covers touch swipe)
-	statsEl.addEventListener('scroll', () => updateStatsFades(statsEl), { passive: true });
 
 	// Initial fade state (deferred so layout is complete)
 	requestAnimationFrame(() => updateStatsFades(statsEl));
@@ -722,24 +692,6 @@ function initChangelog() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
-	// Document-level handlers for stats drag (registered once)
-	document.addEventListener('mousemove', e => {
-		if (!statsDrag.el) return;
-		statsDrag.el.scrollLeft = statsDrag.startScroll - (e.clientX - statsDrag.startX);
-		updateStatsFades(statsDrag.el);
-	});
-	document.addEventListener('mouseup', () => {
-		if (!statsDrag.el) return;
-		const draggedEl = statsDrag.el;
-		const wrapper   = draggedEl.parentElement;
-		draggedEl.classList.remove('is-dragging');
-		statsDrag.el = null;
-		// Resume auto-scroll after a short pause so the user can see where they landed
-		if (draggedEl.classList.contains('can-scroll')) {
-			setTimeout(() => wrapper?._startScroll?.(), 800);
-		}
-	});
-
 	startClock();
 	initSidebarToggle();
 	initFilters();
