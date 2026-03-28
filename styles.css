@@ -798,13 +798,38 @@ body {
 }
 
 /* Live stats area */
+.stats-scroll-wrapper {
+  position: relative;
+}
 .service-stats {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.4rem;
   min-height: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
+.service-stats::-webkit-scrollbar { display: none; }
+.service-stats.can-scroll  { cursor: grab; }
+.service-stats.is-dragging { cursor: grabbing !important; }
 .service-stats:empty { display: none; }
+
+/* Scroll fade overlays */
+.stats-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.stats-fade.visible { opacity: 1; }
+.stats-fade-l { left:  0; background: linear-gradient(to right, var(--bg), transparent); }
+.stats-fade-r { right: 0; background: linear-gradient(to left,  var(--bg), transparent); }
 
 .stat-chip {
   display: flex;

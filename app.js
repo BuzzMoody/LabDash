@@ -224,7 +224,11 @@ function buildCardHTML(svc) {
 					</div>
 				</div>
 				<p class="service-desc" id="desc-${id}">${svc.description ?? ''}</p>
-				<div class="service-stats" id="stats-${id}">${statsHTML}</div>
+				<div class="stats-scroll-wrapper">
+					<div class="service-stats" id="stats-${id}">${statsHTML}</div>
+					<div class="stats-fade stats-fade-l"></div>
+					<div class="stats-fade stats-fade-r"></div>
+				</div>
 			</div>
 			<div class="card-accent-bar"></div>
 		</a>`;
@@ -302,6 +306,7 @@ function renderServices() {
 	});
 
 	updateCounters();
+	requestAnimationFrame(initAllStatsDrag);
 }
 
 // ── Update status + stats for one service ─────────────────────────────────────
@@ -351,6 +356,8 @@ async function updateService(svc) {
 						}
 					});
 				}
+
+				requestAnimationFrame(() => updateStatsFades(statsEl));
 			}
 		}
 	}
@@ -366,6 +373,49 @@ function setLastUpdated() {
 	const now = new Date();
 	const pad = n => String(n).padStart(2, '0');
 	el.textContent = `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+// ── Stats scroll + drag ───────────────────────────────────────────────────────
+const statsDrag = { el: null, startX: 0, startScroll: 0 };
+
+function updateStatsFades(statsEl) {
+	const wrapper = statsEl?.parentElement;
+	if (!wrapper) return;
+	const canScroll = statsEl.scrollWidth > statsEl.clientWidth + 2;
+	const atStart   = statsEl.scrollLeft <= 2;
+	const atEnd     = statsEl.scrollLeft >= statsEl.scrollWidth - statsEl.clientWidth - 2;
+	statsEl.classList.toggle('can-scroll', canScroll);
+	wrapper.querySelector('.stats-fade-l')?.classList.toggle('visible', canScroll && !atStart);
+	wrapper.querySelector('.stats-fade-r')?.classList.toggle('visible', canScroll && !atEnd);
+}
+
+function initStatsDrag(wrapper) {
+	const statsEl = wrapper.querySelector('.service-stats');
+	if (!statsEl) return;
+
+	// Prevent clicks on the stats area from bubbling up to the <a> card link
+	wrapper.addEventListener('click', e => {
+		e.preventDefault();
+		e.stopPropagation();
+	});
+
+	statsEl.addEventListener('mousedown', e => {
+		statsDrag.el          = statsEl;
+		statsDrag.startX      = e.clientX;
+		statsDrag.startScroll = statsEl.scrollLeft;
+		statsEl.classList.add('is-dragging');
+		e.preventDefault();
+	});
+
+	// Update fades on native scroll (covers touch swipe)
+	statsEl.addEventListener('scroll', () => updateStatsFades(statsEl), { passive: true });
+
+	// Initial fade state (deferred so layout is complete)
+	requestAnimationFrame(() => updateStatsFades(statsEl));
+}
+
+function initAllStatsDrag() {
+	document.querySelectorAll('.stats-scroll-wrapper').forEach(initStatsDrag);
 }
 
 // ── Counters ──────────────────────────────────────────────────────────────────
@@ -521,6 +571,18 @@ function initSidebarToggle() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
+	// Document-level handlers for stats drag (registered once)
+	document.addEventListener('mousemove', e => {
+		if (!statsDrag.el) return;
+		statsDrag.el.scrollLeft = statsDrag.startScroll - (e.clientX - statsDrag.startX);
+		updateStatsFades(statsDrag.el);
+	});
+	document.addEventListener('mouseup', () => {
+		if (!statsDrag.el) return;
+		statsDrag.el.classList.remove('is-dragging');
+		statsDrag.el = null;
+	});
+
 	startClock();
 	initSidebarToggle();
 	initFilters();
