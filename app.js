@@ -337,6 +337,10 @@ async function updateService(svc) {
 				const prevLabels = (prevStats ?? []).map(s => s.label).join(',');
 				const newLabels  = stats.map(s => s.label).join(',');
 
+				// Stop the scroll before any DOM change — updateStatsFades will restart
+				// it with fresh clones reflecting the latest values
+				statsEl.parentElement?._stopScroll?.();
+
 				if (prevLabels !== newLabels) {
 					// Structure changed — full rebuild, no flash
 					statsEl.innerHTML = stats.map(s => `
@@ -390,12 +394,16 @@ function blockNextClick(e) {
 function updateStatsFades(statsEl) {
 	const wrapper = statsEl?.parentElement;
 	if (!wrapper) return;
-	const canScroll = statsEl.scrollWidth > statsEl.clientWidth + 2;
-	const atStart   = statsEl.scrollLeft <= 2;
-	const atEnd     = statsEl.scrollLeft >= statsEl.scrollWidth - statsEl.clientWidth - 2;
+	const canScroll    = statsEl.scrollWidth > statsEl.clientWidth + 2;
+	const atStart      = statsEl.scrollLeft <= 2;
+	const atEnd        = statsEl.scrollLeft >= statsEl.scrollWidth - statsEl.clientWidth - 2;
+	const cloneRunning = statsEl.querySelector('[data-scroll-clone]') !== null;
 	statsEl.classList.toggle('can-scroll', canScroll);
 	wrapper.querySelector('.stats-fade-l')?.classList.toggle('visible', canScroll && !atStart);
 	wrapper.querySelector('.stats-fade-r')?.classList.toggle('visible', canScroll && !atEnd);
+	// Auto-start infinite scroll whenever overflow is detected and it isn't already running
+	if (canScroll && !cloneRunning) wrapper._startScroll?.();
+	else if (!canScroll && cloneRunning) wrapper._stopScroll?.();
 }
 
 function initStatsDrag(wrapper) {
@@ -403,29 +411,28 @@ function initStatsDrag(wrapper) {
 	const card    = wrapper.closest('.service-card');
 	if (!statsEl) return;
 
-	// ── Infinite scroll on hover ──────────────────────────────────────────────
+	// ── Infinite scroll ───────────────────────────────────────────────────────
 	// Clones all chips to create a seamless double-length strip, then runs a
 	// rAF loop that increments scrollLeft and wraps at the original width.
+	// Started/stopped automatically by updateStatsFades via wrapper._startScroll
+	// and wrapper._stopScroll whenever overflow state changes.
 	const SCROLL_SPEED = 45; // px per second
-	let scrollRaf   = null;
-	let scrollTimer = null;
-	let loopPoint   = 0;
-	let lastTs      = null;
+	let scrollRaf = null;
+	let loopPoint = 0;
+	let lastTs    = null;
 
 	function stopScroll() {
-		clearTimeout(scrollTimer);
 		cancelAnimationFrame(scrollRaf);
-		scrollRaf = scrollTimer = null;
+		scrollRaf = null;
 		lastTs = null;
 		statsEl.scrollLeft = 0;
 		statsEl.querySelectorAll('[data-scroll-clone]').forEach(el => el.remove());
-		updateStatsFades(statsEl);
 	}
 
 	function startScroll() {
-		if (!statsEl.classList.contains('can-scroll')) return;
+		stopScroll(); // clear any previous run first
 		loopPoint = statsEl.scrollWidth; // measure before cloning
-		statsEl.querySelectorAll('.stat-chip').forEach(chip => {
+		statsEl.querySelectorAll('.stat-chip:not([data-scroll-clone])').forEach(chip => {
 			const clone = chip.cloneNode(true);
 			clone.setAttribute('data-scroll-clone', '');
 			clone.setAttribute('aria-hidden', 'true');
@@ -433,25 +440,19 @@ function initStatsDrag(wrapper) {
 		});
 		function tick(ts) {
 			if (lastTs !== null) {
-				const dt = Math.min(ts - lastTs, 50); // cap to avoid jumps on tab re-focus
+				const dt = Math.min(ts - lastTs, 50); // cap delta to avoid jumps on tab re-focus
 				statsEl.scrollLeft += SCROLL_SPEED * (dt / 1000);
 				if (statsEl.scrollLeft >= loopPoint) statsEl.scrollLeft -= loopPoint;
 			}
 			lastTs = ts;
-			updateStatsFades(statsEl);
 			scrollRaf = requestAnimationFrame(tick);
 		}
 		scrollRaf = requestAnimationFrame(tick);
 	}
 
-	if (card) {
-		card.addEventListener('mouseenter', () => {
-			if (!statsEl.classList.contains('can-scroll')) return;
-			scrollTimer = setTimeout(startScroll, 200);
-		});
-
-		card.addEventListener('mouseleave', stopScroll);
-	}
+	// Expose start/stop so updateStatsFades can trigger them automatically
+	wrapper._startScroll = startScroll;
+	wrapper._stopScroll  = stopScroll;
 
 	// ── Drag ──────────────────────────────────────────────────────────────────
 	// Prevent clicks on the stats area from bubbling up to the <a> card link
