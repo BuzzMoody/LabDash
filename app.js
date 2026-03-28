@@ -577,6 +577,81 @@ function initSidebarToggle() {
 	});
 }
 
+// ── Changelog Modal ───────────────────────────────────────────────────────────
+function simpleMarkdown(md) {
+	const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	const inline = s => {
+		const re = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g;
+		const out = [];
+		let last = 0, m;
+		while ((m = re.exec(s)) !== null) {
+			out.push(escape(s.slice(last, m.index)));
+			const bold = m[0].match(/^\*\*(.+)\*\*$/);
+			const link = m[0].match(/^\[(.+?)\]\((.+?)\)$/);
+			if (bold) out.push(`<strong>${escape(bold[1])}</strong>`);
+			else if (link) out.push(`<a href="${link[2]}" target="_blank" rel="noopener noreferrer">${escape(link[1])}</a>`);
+			last = m.index + m[0].length;
+		}
+		out.push(escape(s.slice(last)));
+		return out.join('');
+	};
+
+	const lines  = md.split('\n');
+	const parts  = [];
+	let inList   = false;
+
+	for (const line of lines) {
+		const h2 = line.match(/^## (.+)/);
+		const li = line.match(/^- (.+)/);
+		const hr = /^---/.test(line.trim());
+
+		if (h2) {
+			if (inList) { parts.push('</ul>'); inList = false; }
+			parts.push(`<h2>${inline(h2[1])}</h2>`);
+		} else if (li) {
+			if (!inList) { parts.push('<ul>'); inList = true; }
+			parts.push(`<li>${inline(li[1])}</li>`);
+		} else if (hr) {
+			if (inList) { parts.push('</ul>'); inList = false; }
+			parts.push('<hr>');
+		} else if (line.trim()) {
+			if (inList) { parts.push('</ul>'); inList = false; }
+			parts.push(`<p>${inline(line)}</p>`);
+		}
+	}
+	if (inList) parts.push('</ul>');
+	return parts.join('');
+}
+
+function initChangelog() {
+	const modal    = document.getElementById('changelog-modal');
+	const bodyEl   = document.getElementById('changelog-body');
+	const btn      = document.getElementById('version-btn');
+	const closeBtn = modal?.querySelector('.changelog-close');
+	const backdrop = modal?.querySelector('.changelog-backdrop');
+	if (!modal || !btn) return;
+
+	const md = (typeof window.__CHANGELOG__ === 'string') ? window.__CHANGELOG__.trim() : '';
+
+	function openModal() {
+		bodyEl.innerHTML = md ? simpleMarkdown(md) : '<p>No release notes available.</p>';
+		modal.classList.remove('hidden');
+		document.body.style.overflow = 'hidden';
+	}
+
+	function closeModal() {
+		modal.classList.add('hidden');
+		document.body.style.overflow = '';
+	}
+
+	btn.addEventListener('click', openModal);
+	closeBtn?.addEventListener('click', closeModal);
+	backdrop?.addEventListener('click', closeModal);
+	document.addEventListener('keydown', e => {
+		if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+	});
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
 	// Document-level handlers for stats drag (registered once)
@@ -595,6 +670,7 @@ async function init() {
 	initSidebarToggle();
 	initFilters();
 	initViewToggle();
+	initChangelog();
 
 	state.services = await loadServices();
 

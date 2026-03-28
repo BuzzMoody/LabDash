@@ -59,11 +59,24 @@ jobs:
           echo "$LOG" >> "$GITHUB_OUTPUT"
           echo "$EOF" >> "$GITHUB_OUTPUT"
 
+      - name: Write release notes file
+        env:
+          NOTES: ${{ steps.changelog.outputs.notes }}
+        run: |
+          {
+            echo "## What's Changed"
+            echo ""
+            echo "$NOTES"
+            echo ""
+            echo "---"
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/v${{ steps.current.outputs.version }}...v${{ steps.next.outputs.version }}"
+          } > release-notes.md
+
       - name: Commit version bump
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION
+          git add VERSION release-notes.md
           git commit -m "chore: bump version to v${{ steps.next.outputs.version }}"
           git push
 
