@@ -19,6 +19,7 @@
 #    qbittorrent  proxmox   glances    immich   pihole
 #    sonarr       radarr    portainer  jellyfin homeassistant
 #    nextcloud    grafana   adguard    emby     dispatcharr
+#    nginxproxymanager
 #
 #  args field (controls which stats are shown on the card):
 #    Comma-separated list of stat keys for the api_type. If omitted, no stats
@@ -38,7 +39,7 @@
 #      adguard:      blocked, queries
 #      emby:         movies, series, episodes
 #      dispatcharr:       channels
-      nginxproxymanager: proxy, redirection, stream, dead, certs, version
+#      nginxproxymanager: proxy, redirection, stream, dead, certs, version
 #
 #  refresh field (per-service refresh interval in seconds):
 #    Overrides the global refresh_interval for this service only.
