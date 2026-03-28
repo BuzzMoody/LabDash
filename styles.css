@@ -970,20 +970,6 @@ body {
   will-change: transform;
 }
 
-/* Scroll fade overlays */
-.stats-fade {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 20px;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.stats-fade.visible { opacity: 1; }
-.stats-fade-l { left:  0; background: linear-gradient(to right, rgba(255,255,255,0.12), transparent); }
-.stats-fade-r { right: 0; background: linear-gradient(to left,  rgba(255,255,255,0.12), transparent); }
 
 
 .stat-chip {

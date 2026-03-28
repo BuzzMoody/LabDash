@@ -230,9 +230,7 @@ function buildCardHTML(svc) {
 				<p class="service-desc" id="desc-${id}">${svc.description ?? ''}</p>
 				<div class="stats-scroll-wrapper">
 					<div class="service-stats" id="stats-${id}">${statsHTML}</div>
-					<div class="stats-fade stats-fade-l"></div>
-					<div class="stats-fade stats-fade-r"></div>
-				</div>
+					</div>
 			</div>
 			<div class="card-accent-bar"></div>
 		</a>`;
@@ -390,19 +388,13 @@ function updateStatsFades(statsEl) {
 
 	// While the CSS animation is running, scrollWidth === clientWidth (width: max-content),
 	// so the normal overflow check is meaningless. Keep both fades visible and bail out.
-	if (statsEl.classList.contains('is-auto-scrolling')) {
-		wrapper.querySelector('.stats-fade-l')?.classList.add('visible');
-		wrapper.querySelector('.stats-fade-r')?.classList.add('visible');
-		return;
-	}
+	if (statsEl.classList.contains('is-auto-scrolling')) return;
 
 	const canScroll    = statsEl.scrollWidth > statsEl.clientWidth + 2;
 	const atStart      = statsEl.scrollLeft <= 2;
 	const atEnd        = statsEl.scrollLeft >= statsEl.scrollWidth - statsEl.clientWidth - 2;
 	const cloneRunning = statsEl.querySelector('[data-scroll-clone]') !== null;
 	statsEl.classList.toggle('can-scroll', canScroll);
-	wrapper.querySelector('.stats-fade-l')?.classList.toggle('visible', canScroll && !atStart);
-	wrapper.querySelector('.stats-fade-r')?.classList.toggle('visible', canScroll && !atEnd);
 	// Auto-start infinite scroll whenever overflow is detected and it isn't already running
 	if (canScroll && !cloneRunning) wrapper._startScroll?.();
 	else if (!canScroll && cloneRunning) wrapper._stopScroll?.();
