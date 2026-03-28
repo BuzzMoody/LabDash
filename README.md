@@ -437,13 +437,36 @@ api_key: "your-api-key"   # optional
 
 ## Logos
 
-Place `.svg` or `.png` files in `./config/logos/` and reference them with the `logo:` field:
+### Where to get icons
 
-```yaml
-logo: jellyfin.svg
+**[Dashboard Icons](https://dashboardicons.com/)** is the recommended source for service logos. It provides a large, actively maintained library of high-quality SVG icons for virtually every self-hosted application. Search for your service, download the SVG, and drop it straight into your config directory. SVG format is preferred as it scales perfectly at any size.
+
+### Where to put them
+
+Place your logo files in `./config/logos/` — the same directory as your `services.yaml`:
+
+```
+config/
+├── services.yaml
+└── logos/
+    ├── jellyfin.svg
+    ├── sonarr.svg
+    ├── radarr.svg
+    └── ...
 ```
 
-If `logo:` is not set, the `icon:` emoji is used as a fallback. If neither is set, a default ⚙️ is shown.
+### How to reference them
+
+Add the `logo:` field to your service entry with just the filename (no path needed):
+
+```yaml
+- name: Jellyfin
+  url: "http://192.168.1.10:8096"
+  logo: jellyfin.svg
+  icon: "🎦"           # fallback if logo fails to load
+```
+
+Both `.svg` and `.png` are supported. If `logo:` is not set, the `icon:` emoji is used as a fallback. If neither is set, a default ⚙️ is shown.
 
 ---
 
