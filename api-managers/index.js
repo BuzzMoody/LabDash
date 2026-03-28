@@ -15,6 +15,7 @@ import { api_emby } from './emby.js';
 import { api_dispatcharr } from './dispatcharr.js';
 import { api_nginxproxymanager } from './nginxproxymanager.js';
 import { api_vaultwarden } from './vaultwarden.js';
+import { api_speedtesttracker } from './speedtesttracker.js';
 
 export const API_HANDLERS = {
 	qbittorrent:   api_qbittorrent,
@@ -34,4 +35,5 @@ export const API_HANDLERS = {
 	dispatcharr:        api_dispatcharr,
 	nginxproxymanager:  api_nginxproxymanager,
 	vaultwarden:        api_vaultwarden,
+	speedtesttracker:   api_speedtesttracker,
 };

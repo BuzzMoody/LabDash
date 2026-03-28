@@ -41,6 +41,7 @@
 #      dispatcharr:       channels
 #      nginxproxymanager: proxy, redirection, stream, dead, certs, version
 #      vaultwarden:       version
+#      speedtesttracker:  ping, download, upload
 #
 #  refresh field (per-service refresh interval in seconds):
 #    Overrides the global refresh_interval for this service only.
