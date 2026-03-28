@@ -870,7 +870,7 @@ body {
   flex-direction: column;
   align-self: stretch;
 }
-#services-grid:not(.view-grouped) .service-category-badge { margin-top: auto; }
+#services-grid:not(.view-grouped) .service-category-badge { margin-top: auto; align-self: flex-start; }
 
 .service-category-badge {
   display: inline-flex;
