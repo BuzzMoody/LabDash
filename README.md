@@ -500,10 +500,4 @@ LabDash/
 
 ---
 
-## Version
-
-Current release: **v1.0.0**
-
----
-
 *Made by Buzz — built for homelabbers, by a homelabber.*
