@@ -14,6 +14,7 @@ import { api_adguard } from './adguard.js';
 import { api_emby } from './emby.js';
 import { api_dispatcharr } from './dispatcharr.js';
 import { api_nginxproxymanager } from './nginxproxymanager.js';
+import { api_vaultwarden } from './vaultwarden.js';
 
 export const API_HANDLERS = {
 	qbittorrent:   api_qbittorrent,
@@ -32,4 +33,5 @@ export const API_HANDLERS = {
 	emby:          api_emby,
 	dispatcharr:        api_dispatcharr,
 	nginxproxymanager:  api_nginxproxymanager,
+	vaultwarden:        api_vaultwarden,
 };
