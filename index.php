@@ -12,6 +12,10 @@ $yamlContent = file_exists($configPath) ? file_get_contents($configPath) : '';
 $versionFile = __DIR__ . '/VERSION';
 $appVersion  = file_exists($versionFile) ? trim(file_get_contents($versionFile)) : '1.0.0';
 
+// ── Read release notes ────────────────────────────────────────────────────────
+$releaseNotesFile = __DIR__ . '/release-notes.md';
+$releaseNotes     = file_exists($releaseNotesFile) ? file_get_contents($releaseNotesFile) : '';
+
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: 0');
@@ -31,6 +35,8 @@ header('Expires: 0');
   <link rel="stylesheet" href="styles.css?v=<?= filemtime(__DIR__.'/styles.css') ?>" />
   <!-- Inject services.yaml content — browser never needs to fetch the file itself -->
   <script>window.__DASHBOARD_YAML__ = <?= json_encode($yamlContent) ?>;</script>
+  <!-- Inject release notes for the changelog modal -->
+  <script>window.__CHANGELOG__ = <?= json_encode($releaseNotes) ?>;</script>
   <!-- js-yaml is bundled locally so the dashboard works without internet access -->
   <script src="js-yaml.min.js?v=<?= file_exists(__DIR__.'/js-yaml.min.js') ? filemtime(__DIR__.'/js-yaml.min.js') : '1' ?>" onerror="document.write('<script src=\'https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js\'><\/script>')"></script>
 </head>
@@ -108,7 +114,7 @@ header('Expires: 0');
           </div>
         </div>
         <div class="sidebar-meta">
-          <span class="meta-item">v<?= htmlspecialchars($appVersion) ?></span>
+          <button id="version-btn" class="meta-item version-btn" title="View release notes" aria-haspopup="dialog">v<?= htmlspecialchars($appVersion) ?></button>
           <span class="meta-sep">·</span>
           <a href="https://github.com/BuzzMoody/LabDash" class="meta-item meta-link" target="_blank" rel="noopener noreferrer">GitHub</a>
           <span class="meta-sep">·</span>
@@ -191,6 +197,19 @@ header('Expires: 0');
     </div><!-- /#main-content -->
 
   </div><!-- /#app -->
+
+  <!-- Changelog modal -->
+  <div id="changelog-modal" class="changelog-modal hidden" role="dialog" aria-modal="true" aria-labelledby="changelog-title">
+    <div class="changelog-backdrop"></div>
+    <div class="changelog-panel">
+      <div class="changelog-header">
+        <span class="changelog-version-tag">v<?= htmlspecialchars($appVersion) ?></span>
+        <h3 id="changelog-title">Release Notes</h3>
+        <button class="changelog-close" aria-label="Close release notes">&times;</button>
+      </div>
+      <div class="changelog-body" id="changelog-body"></div>
+    </div>
+  </div>
 
   <!-- Toast container -->
   <div id="sidebar-overlay"></div>
