@@ -865,6 +865,7 @@ body {
 }
 #services-grid.view-grouped .service-category-badge { display: none; }
 #services-grid.view-grouped .card-header { align-items: center; }
+#services-grid:not(.view-grouped) .card-header { align-items: flex-end; }
 
 .service-category-badge {
   display: inline-flex;
