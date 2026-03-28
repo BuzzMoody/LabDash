@@ -411,13 +411,14 @@ function initStatsDrag(wrapper) {
 	// of mouse activity. Started/stopped by updateStatsFades via wrapper callbacks.
 	const SCROLL_SPEED = 25; // px per second
 
-	function currentOffset() {
-		// Read the live translateX from the compositor so we can resume mid-scroll
-		const matrix = new DOMMatrix(getComputedStyle(statsEl).transform);
-		return Math.abs(matrix.m41); // m41 is translateX; animation moves in negative direction
-	}
-
 	function stopScroll() {
+		// Capture position BEFORE removing the animation — getComputedStyle returns
+		// 'none' the moment the class is gone, so we must read it first and stash
+		// it on the wrapper so startScroll can resume from the same pixel later.
+		if (statsEl.classList.contains('is-auto-scrolling')) {
+			const matrix = new DOMMatrix(getComputedStyle(statsEl).transform);
+			wrapper._resumeOffset = Math.abs(matrix.m41);
+		}
 		statsEl.classList.remove('is-auto-scrolling');
 		statsEl.style.animationDuration = '';
 		statsEl.style.animationDelay    = '';
@@ -426,12 +427,10 @@ function initStatsDrag(wrapper) {
 	}
 
 	function startScroll() {
-		// Snapshot position before tearing down so we can resume seamlessly
-		const resumeOffset = statsEl.classList.contains('is-auto-scrolling')
-			? currentOffset() : 0;
-
-		stopScroll();
+		stopScroll(); // captures current offset into wrapper._resumeOffset
 		if (!statsEl.classList.contains('can-scroll')) return;
+
+		const resumeOffset = wrapper._resumeOffset ?? 0;
 
 		// Clone chips to create a seamless double-length strip
 		statsEl.querySelectorAll('.stat-chip:not([data-scroll-clone])').forEach(chip => {
@@ -450,7 +449,7 @@ function initStatsDrag(wrapper) {
 		const firstClone = statsEl.querySelector('[data-scroll-clone]');
 		const loopW      = firstClone ? firstClone.offsetLeft : statsEl.scrollWidth / 2;
 		const duration   = loopW / SCROLL_SPEED;
-		// Negative delay seeks the animation to the equivalent pixel position
+		// Negative delay seeks the animation to the same pixel position
 		const delay      = -((resumeOffset % loopW) / loopW) * duration;
 
 		statsEl.style.setProperty('--scroll-loop-w', `${loopW}px`);
