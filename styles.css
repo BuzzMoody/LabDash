@@ -968,7 +968,6 @@ body {
   width: max-content;
   animation: stats-infinite-scroll linear infinite;
   will-change: transform;
-  cursor: default !important;
 }
 
 /* Scroll fade overlays */
