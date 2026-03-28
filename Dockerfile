@@ -15,6 +15,7 @@ RUN apk add --no-cache wget \
 RUN mkdir -p /var/www/html
 
 COPY index.php          /var/www/html/index.php
+COPY ping.php           /var/www/html/ping.php
 COPY styles.css         /var/www/html/styles.css
 COPY app.js             /var/www/html/app.js
 COPY VERSION            /var/www/html/VERSION
