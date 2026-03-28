@@ -29,7 +29,7 @@ const state = {
 	activeCategory: 'all',
 	searchQuery: '',
 	statusFilter: null,
-	dashView: localStorage.getItem('dashView') ?? 'flat',
+	dashView: localStorage.getItem('dashView') ?? 'grouped',
 	statusMap: {},
 	statsMap: {},
 	svcTimers: {},
