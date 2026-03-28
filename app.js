@@ -230,9 +230,7 @@ function buildCardHTML(svc) {
 				<p class="service-desc" id="desc-${id}">${svc.description ?? ''}</p>
 				<div class="stats-scroll-wrapper">
 					<div class="service-stats" id="stats-${id}">${statsHTML}</div>
-					<div class="stats-fade stats-fade-l"></div>
-					<div class="stats-fade stats-fade-r"></div>
-				</div>
+					</div>
 			</div>
 			<div class="card-accent-bar"></div>
 		</a>`;
@@ -337,6 +335,10 @@ async function updateService(svc) {
 				const prevLabels = (prevStats ?? []).map(s => s.label).join(',');
 				const newLabels  = stats.map(s => s.label).join(',');
 
+				// Stop the scroll before any DOM change — updateStatsFades will restart
+				// it with fresh clones reflecting the latest values
+				statsEl.parentElement?._stopScroll?.();
+
 				if (prevLabels !== newLabels) {
 					// Structure changed — full rebuild, no flash
 					statsEl.innerHTML = stats.map(s => `
@@ -378,24 +380,24 @@ function setLastUpdated() {
 	el.textContent = `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
-// ── Stats scroll + drag ───────────────────────────────────────────────────────
-const statsDrag = { el: null, startX: 0, startScroll: 0 };
-
-// Capture-phase click blocker — attached once per stats mousedown, auto-removes after first click
-function blockNextClick(e) {
-	e.preventDefault();
-	e.stopPropagation();
-}
+// ── Stats scroll ─────────────────────────────────────────────────────────────
 
 function updateStatsFades(statsEl) {
 	const wrapper = statsEl?.parentElement;
 	if (!wrapper) return;
-	const canScroll = statsEl.scrollWidth > statsEl.clientWidth + 2;
-	const atStart   = statsEl.scrollLeft <= 2;
-	const atEnd     = statsEl.scrollLeft >= statsEl.scrollWidth - statsEl.clientWidth - 2;
+
+	// While the CSS animation is running, scrollWidth === clientWidth (width: max-content),
+	// so the normal overflow check is meaningless. Keep both fades visible and bail out.
+	if (statsEl.classList.contains('is-auto-scrolling')) return;
+
+	const canScroll    = statsEl.scrollWidth > statsEl.clientWidth + 2;
+	const atStart      = statsEl.scrollLeft <= 2;
+	const atEnd        = statsEl.scrollLeft >= statsEl.scrollWidth - statsEl.clientWidth - 2;
+	const cloneRunning = statsEl.querySelector('[data-scroll-clone]') !== null;
 	statsEl.classList.toggle('can-scroll', canScroll);
-	wrapper.querySelector('.stats-fade-l')?.classList.toggle('visible', canScroll && !atStart);
-	wrapper.querySelector('.stats-fade-r')?.classList.toggle('visible', canScroll && !atEnd);
+	// Auto-start infinite scroll whenever overflow is detected and it isn't already running
+	if (canScroll && !cloneRunning) wrapper._startScroll?.();
+	else if (!canScroll && cloneRunning) wrapper._stopScroll?.();
 }
 
 function initStatsDrag(wrapper) {
@@ -403,87 +405,61 @@ function initStatsDrag(wrapper) {
 	const card    = wrapper.closest('.service-card');
 	if (!statsEl) return;
 
-	// ── Scroll-peek hint ───────────────────────────────────────────────────────
-	// Four-phase rAF animation:
-	//   1. ease-in-quart   — lazy crawl that accelerates (0 → peak)
-	//   2. ease-out-cubic  — sharp whip back              (peak → 0)
-	//   3. sine half-wave  — small bounce overshoot        (0 → 9px)
-	//   4. ease-in settle  — snaps back to rest            (9px → 0)
-	const PEEK_PHASES = [
-		{ ms: 430, from: 0,  to: 55, ease: t => t * t * t * t },
-		{ ms: 310, from: 55, to: 0,  ease: t => 1 - Math.pow(1 - t, 3) },
-		{ ms: 115, from: 0,  to: 9,  ease: t => Math.sin(t * Math.PI) },
-		{ ms: 135, from: 9,  to: 0,  ease: t => t * t },
-	];
+	// ── Infinite scroll — CSS animation (compositor thread, never throttled) ──
+	// Clones chips to form a seamless double-length strip, then applies a CSS
+	// @keyframes animation so Chrome always runs it at full frame rate regardless
+	// of mouse activity. Started/stopped by updateStatsFades via wrapper callbacks.
+	const SCROLL_SPEED = 30; // px per second
 
-	let hintTimer = null;
-	const hint    = { live: false };
-
-	function runHintAnimation() {
-		let phase     = 0;
-		let phaseStart = null;
-
-		function step(ts) {
-			if (!hint.live) return;
-			if (!phaseStart) phaseStart = ts;
-			const p = PEEK_PHASES[phase];
-			const t = Math.min((ts - phaseStart) / p.ms, 1);
-			statsEl.scrollLeft = p.from + (p.to - p.from) * p.ease(t);
-			updateStatsFades(statsEl);
-			if (t < 1) {
-				requestAnimationFrame(step);
-			} else if (phase < PEEK_PHASES.length - 1) {
-				phase++;
-				phaseStart = ts;
-				requestAnimationFrame(step);
-			}
+	function stopScroll() {
+		// Capture position BEFORE removing the animation — getComputedStyle returns
+		// 'none' the moment the class is gone, so we must read it first and stash
+		// it on the wrapper so startScroll can resume from the same pixel later.
+		if (statsEl.classList.contains('is-auto-scrolling')) {
+			const matrix = new DOMMatrix(getComputedStyle(statsEl).transform);
+			wrapper._resumeOffset = Math.abs(matrix.m41);
 		}
-		requestAnimationFrame(step);
+		statsEl.classList.remove('is-auto-scrolling');
+		statsEl.style.animationDuration = '';
+		statsEl.style.animationDelay    = '';
+		statsEl.style.removeProperty('--scroll-loop-w');
+		statsEl.querySelectorAll('[data-scroll-clone]').forEach(el => el.remove());
 	}
 
-	function cancelHint() {
-		hint.live = false;
-		clearTimeout(hintTimer);
-		if (statsEl.scrollLeft > 0 && statsEl.scrollLeft < 64) {
-			statsEl.scrollTo({ left: 0, behavior: 'smooth' });
-		}
-	}
+	function startScroll() {
+		stopScroll(); // captures current offset into wrapper._resumeOffset
+		if (!statsEl.classList.contains('can-scroll')) return;
 
-	if (card) {
-		card.addEventListener('mouseenter', () => {
-			if (!statsEl.classList.contains('can-scroll')) return;
-			if (statsEl.scrollLeft > 2) return;
-			hint.live = true;
-			hintTimer = setTimeout(() => {
-				if (hint.live) runHintAnimation();
-			}, 360);
+		const resumeOffset = wrapper._resumeOffset ?? 0;
+
+		// Clone chips to create a seamless double-length strip
+		statsEl.querySelectorAll('.stat-chip:not([data-scroll-clone])').forEach(chip => {
+			const clone = chip.cloneNode(true);
+			clone.setAttribute('data-scroll-clone', '');
+			clone.setAttribute('aria-hidden', 'true');
+			statsEl.appendChild(clone);
 		});
 
-		card.addEventListener('mouseleave', cancelHint);
+		// Add the animating class (sets width: max-content), then force a sync
+		// reflow so offsetLeft is accurate before setting the loop width
+		statsEl.classList.add('is-auto-scrolling');
+		void statsEl.offsetWidth;
+
+		// Measure exact start of first clone for a pixel-perfect seamless loop
+		const firstClone = statsEl.querySelector('[data-scroll-clone]');
+		const loopW      = firstClone ? firstClone.offsetLeft : statsEl.scrollWidth / 2;
+		const duration   = loopW / SCROLL_SPEED;
+		// Negative delay seeks the animation to the same pixel position
+		const delay      = -((resumeOffset % loopW) / loopW) * duration;
+
+		statsEl.style.setProperty('--scroll-loop-w', `${loopW}px`);
+		statsEl.style.animationDuration = `${duration}s`;
+		statsEl.style.animationDelay    = `${delay}s`;
 	}
 
-	// ── Drag ──────────────────────────────────────────────────────────────────
-	// Prevent clicks on the stats area from bubbling up to the <a> card link
-	wrapper.addEventListener('click', e => {
-		e.preventDefault();
-		e.stopPropagation();
-	});
-
-	statsEl.addEventListener('mousedown', e => {
-		cancelHint(); // don't let hint interfere with a deliberate drag
-		statsDrag.el          = statsEl;
-		statsDrag.startX      = e.clientX;
-		statsDrag.startScroll = statsEl.scrollLeft;
-		statsEl.classList.add('is-dragging');
-		e.preventDefault();
-		// Block the next click at document level (capture phase) so releasing
-		// anywhere on the card — inside or outside the stats wrapper — never
-		// triggers the <a> link navigation.
-		document.addEventListener('click', blockNextClick, { capture: true, once: true });
-	});
-
-	// Update fades on native scroll (covers touch swipe)
-	statsEl.addEventListener('scroll', () => updateStatsFades(statsEl), { passive: true });
+	// Expose start/stop so updateStatsFades can trigger them automatically
+	wrapper._startScroll = startScroll;
+	wrapper._stopScroll  = stopScroll;
 
 	// Initial fade state (deferred so layout is complete)
 	requestAnimationFrame(() => updateStatsFades(statsEl));
@@ -723,18 +699,6 @@ function initChangelog() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
-	// Document-level handlers for stats drag (registered once)
-	document.addEventListener('mousemove', e => {
-		if (!statsDrag.el) return;
-		statsDrag.el.scrollLeft = statsDrag.startScroll - (e.clientX - statsDrag.startX);
-		updateStatsFades(statsDrag.el);
-	});
-	document.addEventListener('mouseup', () => {
-		if (!statsDrag.el) return;
-		statsDrag.el.classList.remove('is-dragging');
-		statsDrag.el = null;
-	});
-
 	startClock();
 	initSidebarToggle();
 	initFilters();

@@ -865,7 +865,12 @@ body {
 }
 #services-grid.view-grouped .service-category-badge { display: none; }
 #services-grid.view-grouped .card-header { align-items: center; }
-#services-grid:not(.view-grouped) .card-header { align-items: flex-end; }
+#services-grid:not(.view-grouped) .card-title-block {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+#services-grid:not(.view-grouped) .service-category-badge { margin-top: auto; align-self: flex-start; }
 
 .service-category-badge {
   display: inline-flex;
@@ -943,6 +948,7 @@ body {
   border-radius: var(--radius-sm);
   overflow: hidden;
   margin-top: auto;
+  width: 100%; /* prevents wrapper expanding when chips are width: max-content */
 }
 .service-stats {
   display: flex;
@@ -955,24 +961,20 @@ body {
   -webkit-user-select: none;
 }
 .service-stats::-webkit-scrollbar { display: none; }
-.service-stats.can-scroll  { cursor: grab; }
-.service-stats.is-dragging { cursor: grabbing !important; }
 .service-stats:empty { display: none; }
 
-/* Scroll fade overlays */
-.stats-fade {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 20px;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+/* Infinite scroll — CSS animation runs on compositor thread (no rAF throttle) */
+@keyframes stats-infinite-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-1 * var(--scroll-loop-w))); }
 }
-.stats-fade.visible { opacity: 1; }
-.stats-fade-l { left:  0; background: linear-gradient(to right, rgba(255,255,255,0.12), transparent); }
-.stats-fade-r { right: 0; background: linear-gradient(to left,  rgba(255,255,255,0.12), transparent); }
+.service-stats.is-auto-scrolling {
+  overflow: visible;
+  width: max-content;
+  animation: stats-infinite-scroll linear infinite;
+  will-change: transform;
+}
+
 
 
 .stat-chip {
