@@ -403,63 +403,54 @@ function initStatsDrag(wrapper) {
 	const card    = wrapper.closest('.service-card');
 	if (!statsEl) return;
 
-	// ── Scroll-peek hint ───────────────────────────────────────────────────────
-	// Four-phase rAF animation:
-	//   1. ease-in-quart   — lazy crawl that accelerates (0 → peak)
-	//   2. ease-out-cubic  — sharp whip back              (peak → 0)
-	//   3. sine half-wave  — small bounce overshoot        (0 → 9px)
-	//   4. ease-in settle  — snaps back to rest            (9px → 0)
-	const PEEK_PHASES = [
-		{ ms: 430, from: 0,  to: 55, ease: t => t * t * t * t },
-		{ ms: 310, from: 55, to: 0,  ease: t => 1 - Math.pow(1 - t, 3) },
-		{ ms: 115, from: 0,  to: 9,  ease: t => Math.sin(t * Math.PI) },
-		{ ms: 135, from: 9,  to: 0,  ease: t => t * t },
-	];
+	// ── Infinite scroll on hover ──────────────────────────────────────────────
+	// Clones all chips to create a seamless double-length strip, then runs a
+	// rAF loop that increments scrollLeft and wraps at the original width.
+	const SCROLL_SPEED = 45; // px per second
+	let scrollRaf   = null;
+	let scrollTimer = null;
+	let loopPoint   = 0;
+	let lastTs      = null;
 
-	let hintTimer = null;
-	const hint    = { live: false };
-
-	function runHintAnimation() {
-		let phase     = 0;
-		let phaseStart = null;
-
-		function step(ts) {
-			if (!hint.live) return;
-			if (!phaseStart) phaseStart = ts;
-			const p = PEEK_PHASES[phase];
-			const t = Math.min((ts - phaseStart) / p.ms, 1);
-			statsEl.scrollLeft = p.from + (p.to - p.from) * p.ease(t);
-			updateStatsFades(statsEl);
-			if (t < 1) {
-				requestAnimationFrame(step);
-			} else if (phase < PEEK_PHASES.length - 1) {
-				phase++;
-				phaseStart = ts;
-				requestAnimationFrame(step);
-			}
-		}
-		requestAnimationFrame(step);
+	function stopScroll() {
+		clearTimeout(scrollTimer);
+		cancelAnimationFrame(scrollRaf);
+		scrollRaf = scrollTimer = null;
+		lastTs = null;
+		statsEl.scrollLeft = 0;
+		statsEl.querySelectorAll('[data-scroll-clone]').forEach(el => el.remove());
+		updateStatsFades(statsEl);
 	}
 
-	function cancelHint() {
-		hint.live = false;
-		clearTimeout(hintTimer);
-		if (statsEl.scrollLeft > 0 && statsEl.scrollLeft < 64) {
-			statsEl.scrollTo({ left: 0, behavior: 'smooth' });
+	function startScroll() {
+		if (!statsEl.classList.contains('can-scroll')) return;
+		loopPoint = statsEl.scrollWidth; // measure before cloning
+		statsEl.querySelectorAll('.stat-chip').forEach(chip => {
+			const clone = chip.cloneNode(true);
+			clone.setAttribute('data-scroll-clone', '');
+			clone.setAttribute('aria-hidden', 'true');
+			statsEl.appendChild(clone);
+		});
+		function tick(ts) {
+			if (lastTs !== null) {
+				const dt = Math.min(ts - lastTs, 50); // cap to avoid jumps on tab re-focus
+				statsEl.scrollLeft += SCROLL_SPEED * (dt / 1000);
+				if (statsEl.scrollLeft >= loopPoint) statsEl.scrollLeft -= loopPoint;
+			}
+			lastTs = ts;
+			updateStatsFades(statsEl);
+			scrollRaf = requestAnimationFrame(tick);
 		}
+		scrollRaf = requestAnimationFrame(tick);
 	}
 
 	if (card) {
 		card.addEventListener('mouseenter', () => {
 			if (!statsEl.classList.contains('can-scroll')) return;
-			if (statsEl.scrollLeft > 2) return;
-			hint.live = true;
-			hintTimer = setTimeout(() => {
-				if (hint.live) runHintAnimation();
-			}, 360);
+			scrollTimer = setTimeout(startScroll, 200);
 		});
 
-		card.addEventListener('mouseleave', cancelHint);
+		card.addEventListener('mouseleave', stopScroll);
 	}
 
 	// ── Drag ──────────────────────────────────────────────────────────────────
@@ -470,7 +461,7 @@ function initStatsDrag(wrapper) {
 	});
 
 	statsEl.addEventListener('mousedown', e => {
-		cancelHint(); // don't let hint interfere with a deliberate drag
+		stopScroll(); // cancel auto-scroll when user starts dragging
 		statsDrag.el          = statsEl;
 		statsDrag.startX      = e.clientX;
 		statsDrag.startScroll = statsEl.scrollLeft;
