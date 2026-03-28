@@ -66,10 +66,21 @@ async function timedFetch(url, opts = {}, timeout = CONFIG.apiTimeout) {
 
 async function checkStatus(url) {
 	try {
-		await timedFetch(url, { mode: 'no-cors' }, CONFIG.statusTimeout);
+		// Use default cors mode so we can read the response status
+		const res = await timedFetch(url, {}, CONFIG.statusTimeout);
+		// Treat gateway errors as offline — the backend service isn't reachable
+		if (res.status === 502 || res.status === 503 || res.status === 504) return false;
 		return true;
 	} catch {
-		return false;
+		// Fetch threw — could be a network error (offline) or a CORS rejection
+		// (server is up but blocks cross-origin). Fall back to an opaque no-cors
+		// request to tell them apart: if it succeeds the server is reachable.
+		try {
+			await timedFetch(url, { mode: 'no-cors' }, CONFIG.statusTimeout);
+			return true;
+		} catch {
+			return false;
+		}
 	}
 }
 
