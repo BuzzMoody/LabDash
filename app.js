@@ -394,6 +394,15 @@ function blockNextClick(e) {
 function updateStatsFades(statsEl) {
 	const wrapper = statsEl?.parentElement;
 	if (!wrapper) return;
+
+	// While the CSS animation is running, scrollWidth === clientWidth (width: max-content),
+	// so the normal overflow check is meaningless. Keep both fades visible and bail out.
+	if (statsEl.classList.contains('is-auto-scrolling')) {
+		wrapper.querySelector('.stats-fade-l')?.classList.add('visible');
+		wrapper.querySelector('.stats-fade-r')?.classList.add('visible');
+		return;
+	}
+
 	const canScroll    = statsEl.scrollWidth > statsEl.clientWidth + 2;
 	const atStart      = statsEl.scrollLeft <= 2;
 	const atEnd        = statsEl.scrollLeft >= statsEl.scrollWidth - statsEl.clientWidth - 2;
@@ -411,43 +420,41 @@ function initStatsDrag(wrapper) {
 	const card    = wrapper.closest('.service-card');
 	if (!statsEl) return;
 
-	// ── Infinite scroll ───────────────────────────────────────────────────────
-	// Clones all chips to create a seamless double-length strip, then runs a
-	// rAF loop that increments scrollLeft and wraps at the original width.
-	// Started/stopped automatically by updateStatsFades via wrapper._startScroll
-	// and wrapper._stopScroll whenever overflow state changes.
+	// ── Infinite scroll — CSS animation (compositor thread, never throttled) ──
+	// Clones chips to form a seamless double-length strip, then applies a CSS
+	// @keyframes animation so Chrome always runs it at full frame rate regardless
+	// of mouse activity. Started/stopped by updateStatsFades via wrapper callbacks.
 	const SCROLL_SPEED = 45; // px per second
-	let scrollRaf = null;
-	let loopPoint = 0;
-	let lastTs    = null;
 
 	function stopScroll() {
-		cancelAnimationFrame(scrollRaf);
-		scrollRaf = null;
-		lastTs = null;
-		statsEl.scrollLeft = 0;
+		statsEl.classList.remove('is-auto-scrolling');
+		statsEl.style.animationDuration = '';
+		statsEl.style.removeProperty('--scroll-loop-w');
 		statsEl.querySelectorAll('[data-scroll-clone]').forEach(el => el.remove());
 	}
 
 	function startScroll() {
-		stopScroll(); // clear any previous run first
-		loopPoint = statsEl.scrollWidth; // measure before cloning
+		stopScroll(); // clear any previous run
+		if (!statsEl.classList.contains('can-scroll')) return;
+
+		// Clone chips to create a seamless double-length strip
 		statsEl.querySelectorAll('.stat-chip:not([data-scroll-clone])').forEach(chip => {
 			const clone = chip.cloneNode(true);
 			clone.setAttribute('data-scroll-clone', '');
 			clone.setAttribute('aria-hidden', 'true');
 			statsEl.appendChild(clone);
 		});
-		function tick(ts) {
-			if (lastTs !== null) {
-				const dt = Math.min(ts - lastTs, 50); // cap delta to avoid jumps on tab re-focus
-				statsEl.scrollLeft += SCROLL_SPEED * (dt / 1000);
-				if (statsEl.scrollLeft >= loopPoint) statsEl.scrollLeft -= loopPoint;
-			}
-			lastTs = ts;
-			scrollRaf = requestAnimationFrame(tick);
-		}
-		scrollRaf = requestAnimationFrame(tick);
+
+		// Add the animating class (sets width: max-content), then force a sync
+		// reflow so offsetLeft is accurate before setting the loop width
+		statsEl.classList.add('is-auto-scrolling');
+		void statsEl.offsetWidth;
+
+		// Measure exact start of first clone for a pixel-perfect seamless loop
+		const firstClone = statsEl.querySelector('[data-scroll-clone]');
+		const loopW = firstClone ? firstClone.offsetLeft : statsEl.scrollWidth / 2;
+		statsEl.style.setProperty('--scroll-loop-w', `${loopW}px`);
+		statsEl.style.animationDuration = `${loopW / SCROLL_SPEED}s`;
 	}
 
 	// Expose start/stop so updateStatsFades can trigger them automatically
@@ -723,8 +730,14 @@ async function init() {
 	});
 	document.addEventListener('mouseup', () => {
 		if (!statsDrag.el) return;
-		statsDrag.el.classList.remove('is-dragging');
+		const draggedEl = statsDrag.el;
+		const wrapper   = draggedEl.parentElement;
+		draggedEl.classList.remove('is-dragging');
 		statsDrag.el = null;
+		// Resume auto-scroll after a short pause so the user can see where they landed
+		if (draggedEl.classList.contains('can-scroll')) {
+			setTimeout(() => wrapper?._startScroll?.(), 800);
+		}
 	});
 
 	startClock();
