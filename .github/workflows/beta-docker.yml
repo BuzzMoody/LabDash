@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/labdash
+  IMAGE_NAME: buzzmoody/labdash
 
 jobs:
   build-and-push:
