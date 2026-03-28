@@ -16,9 +16,13 @@ $appVersion  = file_exists($versionFile) ? trim(file_get_contents($versionFile))
 $releaseNotesFile = __DIR__ . '/release-notes.md';
 $releaseNotes     = file_exists($releaseNotesFile) ? file_get_contents($releaseNotesFile) : '';
 
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Pragma: no-cache');
-header('Expires: 0');
+$isBeta = getenv('BETA') === 'true';
+
+if ($isBeta) {
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,13 +36,13 @@ header('Expires: 0');
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=<?= filemtime(__DIR__.'/styles.css') ?>" />
+  <link rel="stylesheet" href="styles.css?v=<?= $isBeta ? filemtime(__DIR__.'/styles.css') : $appVersion ?>" />
   <!-- Inject services.yaml content — browser never needs to fetch the file itself -->
   <script>window.__DASHBOARD_YAML__ = <?= json_encode($yamlContent) ?>;</script>
   <!-- Inject release notes for the changelog modal -->
   <script>window.__CHANGELOG__ = <?= json_encode($releaseNotes) ?>;</script>
   <!-- js-yaml is bundled locally so the dashboard works without internet access -->
-  <script src="js-yaml.min.js?v=<?= file_exists(__DIR__.'/js-yaml.min.js') ? filemtime(__DIR__.'/js-yaml.min.js') : '1' ?>" onerror="document.write('<script src=\'https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js\'><\/script>')"></script>
+  <script src="js-yaml.min.js?v=<?= $isBeta && file_exists(__DIR__.'/js-yaml.min.js') ? filemtime(__DIR__.'/js-yaml.min.js') : $appVersion ?>" onerror="document.write('<script src=\'https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js\'><\/script>')"></script>
 </head>
 <body>
 
@@ -215,6 +219,6 @@ header('Expires: 0');
   <div id="sidebar-overlay"></div>
   <div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
-  <script type="module" src="app.js?v=<?= filemtime(__DIR__.'/app.js') ?>"></script>
+  <script type="module" src="app.js?v=<?= $isBeta ? filemtime(__DIR__.'/app.js') : $appVersion ?>"></script>
 </body>
 </html>
