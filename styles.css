@@ -865,7 +865,12 @@ body {
 }
 #services-grid.view-grouped .service-category-badge { display: none; }
 #services-grid.view-grouped .card-header { align-items: center; }
-#services-grid:not(.view-grouped) .card-header { align-items: flex-end; }
+#services-grid:not(.view-grouped) .card-title-block {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+#services-grid:not(.view-grouped) .service-category-badge { margin-top: auto; }
 
 .service-category-badge {
   display: inline-flex;
