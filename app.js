@@ -409,7 +409,7 @@ function initStatsDrag(wrapper) {
 	// Clones chips to form a seamless double-length strip, then applies a CSS
 	// @keyframes animation so Chrome always runs it at full frame rate regardless
 	// of mouse activity. Started/stopped by updateStatsFades via wrapper callbacks.
-	const SCROLL_SPEED = 25; // px per second
+	const SCROLL_SPEED = 30; // px per second
 
 	function stopScroll() {
 		// Capture position BEFORE removing the animation — getComputedStyle returns
