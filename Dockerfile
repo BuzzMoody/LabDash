@@ -38,6 +38,9 @@ RUN chown -R www-data:www-data /var/www/html /config
 
 # ── Default port (override with -e PORT=xxxx) ─────────────────────────────────
 ENV PORT=6969
+# ── Beta mode: disables caching (baked in at build time, overridable at runtime)
+ARG BETA=false
+ENV BETA=${BETA}
 EXPOSE 6969
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
