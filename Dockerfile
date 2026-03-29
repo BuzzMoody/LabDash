@@ -1,50 +1,50 @@
 # =============================================================================
 #  Homelab Dashboard — Dockerfile
-#  Lightweight PHP CLI + built-in server on Alpine
+#  Multi-stage: Go binary compiled in builder, copied to bare Alpine runtime.
+#  No PHP, no nginx, no FPM — just a single static binary + Alpine base.
 # =============================================================================
 
-FROM php:8.5-cli-alpine
+# ── Stage 1: build ────────────────────────────────────────────────────────────
+# Always build on the native platform so Go cross-compiles instead of
+# running under QEMU emulation — dramatically faster for arm64 targets.
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
-# Install wget to grab js-yaml at build time (removed afterwards)
-RUN apk add --no-cache wget \
- && wget -q -O /tmp/js-yaml.min.js \
-        https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js \
- && apk del wget
+WORKDIR /build
 
-# ── Web root ──────────────────────────────────────────────────────────────────
-RUN mkdir -p /var/www/html
+# Separate layer so js-yaml is only re-downloaded when this line changes
+RUN wget -q -O js-yaml.min.js \
+        https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js
 
-COPY index.php          /var/www/html/index.php
-COPY ping.php           /var/www/html/ping.php
-COPY styles.css         /var/www/html/styles.css
-COPY app.js             /var/www/html/app.js
-COPY VERSION            /var/www/html/VERSION
-COPY release-notes.md   /var/www/html/release-notes.md
-COPY api-managers/      /var/www/html/api-managers/
-RUN  cp /tmp/js-yaml.min.js /var/www/html/js-yaml.min.js && rm /tmp/js-yaml.min.js
+# Copy source and assets
+COPY go.mod main.go index.html ./
+COPY styles.css app.js VERSION release-notes.md ./
+COPY api-managers/ api-managers/
 
-# ── Example config (copied to /config on first run if absent) ─────────────────
-RUN mkdir -p /usr/local/share/dashboard
-COPY example.services.yaml /usr/local/share/dashboard/example.services.yaml
+# Compile — cross-compile to target arch, reuse Go build cache between runs
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -ldflags="-s -w" -o labdash .
 
-# ── Runtime config directory (mount point) ────────────────────────────────────
-#  Volume: /config
-#    /config/services.yaml  ← user config (NOT web-accessible)
-#    /config/logos/         ← optional logo images (web-accessible via symlink)
+# ── Stage 2: runtime ──────────────────────────────────────────────────────────
+FROM alpine:3.21
+
+# CA certificates for outbound HTTPS status checks
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /build/labdash     /labdash
+COPY example.services.yaml             /example.services.yaml
+
+# Runtime config directory (mount point for user data)
 RUN mkdir -p /config/logos
-
-# ── Permissions ───────────────────────────────────────────────────────────────
-RUN chown -R www-data:www-data /var/www/html /config
 
 # ── Default port (override with -e PORT=xxxx) ─────────────────────────────────
 ENV PORT=6969
 # ── Beta mode: disables caching (baked in at build time, overridable at runtime)
 ARG BETA=false
 ENV BETA=${BETA}
+
 EXPOSE 6969
 
-# ── Entrypoint ────────────────────────────────────────────────────────────────
-COPY entrypoint.sh /entrypoint.sh
-RUN  chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/labdash"]

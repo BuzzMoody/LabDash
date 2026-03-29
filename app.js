@@ -6,6 +6,7 @@ import { API_HANDLERS } from './api-managers/index.js';
 const CONFIG = {
 	yamlPath: './services.yaml',
 	refreshInterval: 30_000,
+	statusInterval:  60_000,   // ping checks run at half the stats rate
 	apiTimeout: 7_000,
 	statusTimeout: 5_000,
 };
@@ -32,6 +33,9 @@ const state = {
 	statusMap: {},
 	statsMap: {},
 	svcTimers: {},
+	svcStarts: {},           // initial stagger timeouts (cleared alongside svcTimers)
+	inFlight: new Set(),     // service IDs currently being updated (dedup guard)
+	lastStatusCheck: {},     // timestamps of last ping per service ID
 	countdownTimer: null,
 	nextRefreshAt: null,
 	settings: {},
@@ -68,7 +72,7 @@ async function checkStatus(url) {
 	try {
 		// Proxy the check through PHP — server-side requests have no CORS
 		// restrictions so we always get the real HTTP status code (incl. 502).
-		const res  = await timedFetch(`/ping.php?url=${encodeURIComponent(url)}`, {}, CONFIG.statusTimeout);
+		const res  = await timedFetch(`/ping?url=${encodeURIComponent(url)}`, {}, CONFIG.statusTimeout);
 		const data = await res.json();
 		// status 0 means PHP couldn't reach the host at all
 		if (!data.status || data.status === 502 || data.status === 503 || data.status === 504) return false;
@@ -312,64 +316,93 @@ function renderServices() {
 }
 
 // ── Update status + stats for one service ─────────────────────────────────────
-async function updateService(svc) {
+// statusOverride: boolean (from batch ping) or null (do individual ping if due)
+async function updateService(svc, statusOverride = null) {
 	const id = svcId(svc);
 
-	const prevStatus = state.statusMap[id];
-	const online     = await checkStatus(svc.endpoint ?? svc.url);
-	state.statusMap[id] = online ? 'online' : 'offline';
+	// Skip if an update is already in flight for this service
+	if (state.inFlight.has(id)) return;
+	state.inFlight.add(id);
 
-	const statusEl = document.getElementById(`status-${id}`);
-	if (statusEl && (prevStatus !== state.statusMap[id] || prevStatus === 'loading')) {
-		const delayAttr = online ? ' style="animation-delay:5s"' : '';
-		statusEl.className = `service-status ${online ? 'online' : 'offline'}`;
-		statusEl.innerHTML = `<span class="status-dot ${online ? 'online' : 'offline'}"></span><span class="status-text"${delayAttr}>${online ? 'Online' : 'Offline'}</span>`;
-	}
+	try {
+		const prevStatus = state.statusMap[id];
+		let online;
 
-	if (online && svc.api_type && API_HANDLERS[svc.api_type]) {
-		const stats = await API_HANDLERS[svc.api_type](svc, timedFetch, { fmtNum, fmtBytes });
-		if (stats) {
-			const prevStats = state.statsMap[id];
-			state.statsMap[id] = stats;
-			const statsEl = document.getElementById(`stats-${id}`);
-			if (statsEl) {
-				const prevLabels = (prevStats ?? []).map(s => s.label).join(',');
-				const newLabels  = stats.map(s => s.label).join(',');
-
-				// Stop the scroll before any DOM change — updateStatsFades will restart
-				// it with fresh clones reflecting the latest values
-				statsEl.parentElement?._stopScroll?.();
-
-				if (prevLabels !== newLabels) {
-					// Structure changed — full rebuild, no flash
-					statsEl.innerHTML = stats.map(s => `
-						<div class="stat-chip">
-							<span class="s-label">${s.label}</span>
-							<span class="s-value">${s.value}</span>
-						</div>`).join('');
-				} else {
-					// Same structure — update only changed values and flash those chips
-					const chips = statsEl.querySelectorAll('.stat-chip');
-					stats.forEach((s, i) => {
-						const chip    = chips[i];
-						if (!chip) return;
-						const valueEl = chip.querySelector('.s-value');
-						if (valueEl && valueEl.textContent !== String(s.value)) {
-							valueEl.textContent = s.value;
-							chip.classList.remove('stat-updated');
-							void chip.offsetWidth; // force reflow to restart animation
-							chip.classList.add('stat-updated');
-						}
-					});
-				}
-
-				requestAnimationFrame(() => updateStatsFades(statsEl));
+		if (statusOverride !== null) {
+			// Status supplied by batch ping — record timestamp and use it directly
+			online = statusOverride;
+			state.lastStatusCheck[id] = Date.now();
+		} else {
+			const now       = Date.now();
+			const lastCheck = state.lastStatusCheck[id] ?? 0;
+			// Always re-ping offline services — never cache a down state
+			if (now - lastCheck >= CONFIG.statusInterval || prevStatus === 'loading' || prevStatus === 'offline') {
+				// Ping is due
+				online = await checkStatus(svc.endpoint ?? svc.url);
+				state.lastStatusCheck[id] = now;
+			} else {
+				// Reuse cached status — only fetch stats this tick
+				online = prevStatus === 'online';
 			}
 		}
-	}
 
-	updateCounters();
-	setLastUpdated();
+		state.statusMap[id] = online ? 'online' : 'offline';
+
+		const statusEl = document.getElementById(`status-${id}`);
+		if (statusEl && (prevStatus !== state.statusMap[id] || prevStatus === 'loading')) {
+			const delayAttr = online ? ' style="animation-delay:5s"' : '';
+			statusEl.className = `service-status ${online ? 'online' : 'offline'}`;
+			statusEl.innerHTML = `<span class="status-dot ${online ? 'online' : 'offline'}"></span><span class="status-text"${delayAttr}>${online ? 'Online' : 'Offline'}</span>`;
+		}
+
+		if (online && svc.api_type && API_HANDLERS[svc.api_type]) {
+			const stats = await API_HANDLERS[svc.api_type](svc, timedFetch, { fmtNum, fmtBytes });
+			if (stats) {
+				const prevStats = state.statsMap[id];
+				state.statsMap[id] = stats;
+				const statsEl = document.getElementById(`stats-${id}`);
+				if (statsEl) {
+					const prevLabels = (prevStats ?? []).map(s => s.label).join(',');
+					const newLabels  = stats.map(s => s.label).join(',');
+
+					if (prevLabels !== newLabels) {
+						// Structure changed — stop scroll, full rebuild, restart
+						statsEl.parentElement?._stopScroll?.();
+						statsEl.innerHTML = stats.map(s => `
+							<div class="stat-chip">
+								<span class="s-label">${s.label}</span>
+								<span class="s-value">${s.value}</span>
+							</div>`).join('');
+						requestAnimationFrame(() => updateStatsFades(statsEl));
+					} else {
+						// Same structure — update originals AND clones in place so the
+						// scroll animation never needs to stop and restart
+						const origChips  = statsEl.querySelectorAll('.stat-chip:not([data-scroll-clone])');
+						const cloneChips = statsEl.querySelectorAll('.stat-chip[data-scroll-clone]');
+						stats.forEach((s, i) => {
+							const newVal  = String(s.value);
+							const chip    = origChips[i];
+							if (!chip) return;
+							const valueEl = chip.querySelector('.s-value');
+							if (valueEl && valueEl.textContent !== newVal) {
+								valueEl.textContent = newVal;
+								chip.classList.remove('stat-updated');
+								void chip.offsetWidth; // force reflow to restart flash animation
+								chip.classList.add('stat-updated');
+							}
+							const cloneValueEl = cloneChips[i]?.querySelector('.s-value');
+							if (cloneValueEl) cloneValueEl.textContent = newVal;
+						});
+					}
+				}
+			}
+		}
+
+		updateCounters();
+		setLastUpdated();
+	} finally {
+		state.inFlight.delete(id);
+	}
 }
 
 // ── Last updated timestamp ─────────────────────────────────────────────────────
@@ -539,19 +572,38 @@ function initViewToggle() {
 // ── Per-service timers ────────────────────────────────────────────────────────
 function clearServiceTimers() {
 	Object.values(state.svcTimers).forEach(clearInterval);
+	Object.values(state.svcStarts).forEach(clearTimeout);
 	state.svcTimers = {};
+	state.svcStarts = {};
 }
 
 function startServiceTimers() {
 	clearServiceTimers();
-	state.services.forEach(svc => {
-		const ms = svc.refresh != null
-			? svc.refresh * 1000
-			: CONFIG.refreshInterval;
-		state.svcTimers[svcId(svc)] = setInterval(() => updateService(svc), ms);
+	const n = state.services.length;
+	state.services.forEach((svc, i) => {
+		const ms = svc.refresh != null ? svc.refresh * 1000 : CONFIG.refreshInterval;
+		// Spread first ticks evenly across the interval so no thundering herd
+		const firstDelay = n > 1 ? Math.round(((i + 1) / n) * ms) : ms;
+		state.svcStarts[svcId(svc)] = setTimeout(() => {
+			updateService(svc);
+			state.svcTimers[svcId(svc)] = setInterval(() => updateService(svc), ms);
+		}, firstDelay);
 	});
-	// Countdown tracks the default refresh cycle
 	state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
+}
+
+// ── Batch status check ────────────────────────────────────────────────────────
+// Sends all URLs in one request to /batch-ping (goroutine fan-out in Go).
+// Falls back gracefully — if batch fails, updateService does individual pings.
+async function batchCheckStatuses(services) {
+	try {
+		const params = new URLSearchParams();
+		services.forEach(svc => params.append('urls[]', svc.endpoint ?? svc.url));
+		const res  = await timedFetch(`/batch-ping?${params}`, {}, CONFIG.statusTimeout + 3000);
+		return await res.json();
+	} catch {
+		return {};
+	}
 }
 
 // ── Refresh ───────────────────────────────────────────────────────────────────
@@ -559,7 +611,19 @@ async function refreshAll() {
 	const btn = document.getElementById('refresh-btn');
 	btn?.classList.add('spinning');
 
-	await Promise.allSettled(state.services.map(updateService));
+	// One batch request replaces N individual /ping calls
+	const batchResults = await batchCheckStatuses(state.services);
+
+	await Promise.allSettled(state.services.map(svc => {
+		const url    = svc.endpoint ?? svc.url;
+		const code   = batchResults[url];
+		// code 0 means HEAD not supported or no response — treat as unknown
+		// so updateService falls back to an individual GET ping
+		const online = (code == null || code === 0)
+			? null
+			: (code !== 502 && code !== 503 && code !== 504);
+		return updateService(svc, online);
+	}));
 
 	btn?.classList.remove('spinning');
 }
