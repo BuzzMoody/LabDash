@@ -817,7 +817,7 @@ body {
 
 /* Card body */
 .card-body {
-  padding: 1rem;
+  padding: 1rem 1rem 0rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -959,6 +959,7 @@ body {
   scrollbar-width: none;
   user-select: none;
   -webkit-user-select: none;
+  margin-bottom: 1rem;
 }
 .service-stats::-webkit-scrollbar { display: none; }
 .service-stats:empty { display: none; }
