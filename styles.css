@@ -1240,54 +1240,72 @@ body.hide-descriptions-mode .service-card:has(.stat-chip) .service-desc {
 }
 
 
-/* ── Mode: Icons Only (Compressed Layout) ── */
+/* ── Mode: Icons Only (Compact Grid Layout) ── */
 body.icons-only-mode #services-grid:not(.view-grouped),
 body.icons-only-mode .cat-section-grid {
-    /* Shrink the grid columns to create a dense layout */
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 0.8rem;
+    /* Increased minimum width to fit text content comfortably */
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
 }
 
 body.icons-only-mode .service-card {
-    padding: 1.2rem;
-    aspect-ratio: 1 / 1;
+    padding: 1.5rem 1rem;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-
-body.icons-only-mode .card-body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
+    text-align: center;
 }
 
 body.icons-only-mode .card-header {
-    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
     margin: 0;
 }
 
-/* Hide text, stats, and description in icons-only mode */
-body.icons-only-mode .card-title-block,
-body.icons-only-mode .service-status .status-text,
+/* Enlarge the logo/icon significantly */
+body.icons-only-mode .service-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 3.5rem; /* Scales up emoji icons if no image is present */
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Stack the title block below the icon */
+body.icons-only-mode .card-title-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1.2rem;
+    margin-left: 0; /* Override the default left margin */
+    gap: 0.5rem;
+}
+
+/* Allow the title to drop to a new line without getting cut off */
+body.icons-only-mode .service-name {
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* Hide descriptions, stats, and the text of the status indicator */
 body.icons-only-mode .service-desc,
-body.icons-only-mode .stats-scroll-wrapper {
+body.icons-only-mode .stats-scroll-wrapper,
+body.icons-only-mode .service-status .status-text {
     display: none;
 }
 
-/* Enlarge the icon and center it */
-body.icons-only-mode .service-icon {
-    width: 56px;
-    height: 56px;
-    font-size: 2.2rem;
-    margin: 0;
-}
-
-/* Un-flow the status indicator and pin it to the corner */
+/* Keep the status dot pinned to the top right */
 body.icons-only-mode .service-status {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 14px;
+    right: 14px;
     margin: 0;
 }
