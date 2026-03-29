@@ -21,6 +21,7 @@ RUN wget -q -O js-yaml.min.js \
 COPY go.mod main.go index.html ./
 COPY styles.css app.js VERSION release-notes.md ./
 COPY api-managers/ api-managers/
+COPY js/ js/
 
 # Compile — cross-compile to target arch, reuse Go build cache between runs
 RUN --mount=type=cache,target=/root/.cache/go-build \
