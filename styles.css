@@ -116,20 +116,20 @@ body {
   width: 600px; height: 600px;
   top: -180px; left: -120px;
   background: radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 65%);
-  #animation: orb-drift-1 25s ease-in-out infinite alternate;
+  animation: orb-drift-1 25s ease-in-out infinite alternate;
 }
 .orb-2 {
   width: 700px; height: 700px;
   bottom: -250px; right: -180px;
   background: radial-gradient(circle, rgba(129, 140, 248, 0.16) 0%, transparent 65%);
-  #animation: orb-drift-2 30s ease-in-out infinite alternate;
+  animation: orb-drift-2 30s ease-in-out infinite alternate;
 }
 .orb-3 {
   width: 400px; height: 400px;
   top: 45%; left: 45%;
   transform: translate(-50%, -50%);
   background: radial-gradient(circle, rgba(232, 121, 249, 0.07) 0%, transparent 65%);
-  #animation: orb-drift-3 20s ease-in-out infinite alternate;
+  animation: orb-drift-3 20s ease-in-out infinite alternate;
 }
 .grid-dots {
   position: absolute;
@@ -177,7 +177,7 @@ body {
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  #animation: brand-icon 9s ease-in-out infinite;
+  animation: brand-icon 9s ease-in-out infinite;
 }
 .brand-text {
   display: flex;
@@ -194,7 +194,7 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   white-space: nowrap;
-  #animation: brand-aurora 5s linear infinite;
+  animation: brand-aurora 5s linear infinite;
 }
 .brand-subtitle {
   font-size: 0.5rem;
@@ -203,7 +203,7 @@ body {
   color: #64748b;
   text-transform: uppercase;
   white-space: nowrap;
-  #animation: brand-sub-breathe 4s ease-in-out infinite;
+  animation: brand-sub-breathe 4s ease-in-out infinite;
 }
 
 /* Search */
@@ -351,7 +351,7 @@ body {
 }
 .refresh-btn svg { width: 14px; height: 14px; flex-shrink: 0; pointer-events: none; }
 .refresh-btn:hover { background: var(--surface-hi); color: var(--cyan); border-color: rgba(34,211,238,0.3); }
-.refresh-btn.spinning svg { #animation: spin 0.7s linear infinite; }
+.refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
 
 .refresh-times {
   flex: 1;
@@ -433,7 +433,7 @@ body {
   display: flex;
   flex-direction: column;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  #animation: changelog-in 0.2s var(--smooth);
+  animation: changelog-in 0.2s var(--smooth);
 }
 @keyframes changelog-in {
   from { opacity: 0; transform: translateY(12px) scale(0.97); }
@@ -628,7 +628,7 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.dot-online  { background: var(--online);  #animation: pulse-green 2.5s ease-out infinite; }
+.dot-online  { background: var(--online);  animation: pulse-green 2.5s ease-out infinite; }
 .dot-offline { background: var(--offline); }
 
 .clock {
@@ -689,13 +689,13 @@ body {
 .loader-ring.outer {
   border-top-color: var(--cyan);
   border-right-color: rgba(34,211,238,0.3);
-  #animation: spin 1.1s linear infinite;
+  animation: spin 1.1s linear infinite;
 }
 .loader-ring.inner {
   inset: 8px;
   border-bottom-color: var(--purple);
   border-left-color: rgba(129,140,248,0.3);
-  #animation: spin 0.75s linear infinite reverse;
+  animation: spin 0.75s linear infinite reverse;
 }
 .loader-text {
   font-size: 0.82rem;
@@ -776,7 +776,7 @@ body {
     border-color 0.25s var(--ease),
     box-shadow 0.35s var(--ease),
     --glow-spread 0.35s var(--ease);
-  #animation: card-in 0.5s var(--smooth) both;
+  animation: card-in 0.5s var(--smooth) both;
   cursor: pointer;
 }
 .service-card:hover {
@@ -912,9 +912,9 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.status-dot.online  { background: var(--online);  #animation: pulse-green 2.5s ease-out infinite; }
+.status-dot.online  { background: var(--online);  animation: pulse-green 2.5s ease-out infinite; }
 .status-dot.offline { background: var(--offline); }
-.status-dot.loading { background: var(--loading); #animation: blink 1s ease-in-out infinite; }
+.status-dot.loading { background: var(--loading); animation: blink 1s ease-in-out infinite; }
 
 /* Status text collapses for online cards after a delay */
 .status-text {
@@ -924,7 +924,7 @@ body {
   vertical-align: text-bottom;
 }
 .service-status.online .status-text {
-  #animation: status-text-collapse 0.55s var(--smooth) 5s both;
+  animation: status-text-collapse 0.55s var(--smooth) 5s both;
 }
 @keyframes status-text-collapse {
   from { max-width: 5em; opacity: 1; margin-left: 0; }
@@ -963,7 +963,7 @@ body {
 .service-stats::-webkit-scrollbar { display: none; }
 .service-stats:empty { display: none; }
 
-/* Infinite scroll — CSS #animation runs on compositor thread (no rAF throttle) */
+/* Infinite scroll — CSS animation runs on compositor thread (no rAF throttle) */
 @keyframes stats-infinite-scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(calc(-1 * var(--scroll-loop-w))); }
@@ -971,7 +971,7 @@ body {
 .service-stats.is-auto-scrolling {
   overflow: visible;
   width: max-content;
-  #animation: stats-infinite-scroll linear infinite;
+  animation: stats-infinite-scroll linear infinite;
   will-change: transform;
 }
 
@@ -1007,7 +1007,7 @@ body {
   100% { color: var(--card-accent); text-shadow: none; }
 }
 .stat-chip.stat-updated .s-value {
-  #animation: stat-value-flash 0.55s ease-out forwards;
+  animation: stat-value-flash 0.55s ease-out forwards;
 }
 
 /* Card accent bar (bottom) */
@@ -1043,7 +1043,7 @@ body {
 .service-card.is-loading .service-name {
   background: linear-gradient(90deg, var(--surface-hi) 25%, var(--surface) 50%, var(--surface-hi) 75%);
   background-size: 200% 100%;
-  #animation: shimmer 1.5s infinite;
+  animation: shimmer 1.5s infinite;
   border-radius: 4px;
   color: transparent;
   user-select: none;
@@ -1084,17 +1084,17 @@ body {
   font-size: 0.8rem;
   color: var(--text-2);
   max-width: 320px;
-  #animation: toast-in 0.3s var(--smooth) both;
+  animation: toast-in 0.3s var(--smooth) both;
   pointer-events: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 .toast.error   { border-color: rgba(248,113,113,0.3); color: var(--offline); }
 .toast.success { border-color: rgba(74,222,128,0.3);  color: var(--online); }
 .toast.info    { border-color: rgba(34,211,238,0.3);  color: var(--cyan); }
-.toast.hiding  { #animation: toast-out 0.3s var(--ease) both; }
+.toast.hiding  { animation: toast-out 0.3s var(--ease) both; }
 .toast-icon { font-size: 1rem; flex-shrink: 0; }
 
-/* ── #animations ─────────────────────────────────────────────────────────────── */
+/* ── animations ─────────────────────────────────────────────────────────────── */
 @keyframes orb-drift-1 {
   from { transform: translate(0, 0) scale(1); }
   to   { transform: translate(60px, 40px) scale(1.12); }
@@ -1225,7 +1225,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    #animation-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }
