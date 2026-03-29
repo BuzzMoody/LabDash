@@ -1,6 +1,6 @@
 ## What's Changed
 
-- fix: minor CSS change to fix alignments (#14) (43f8052)
+- Update badge, changelog notice & static asset caching (#15) (370c0e9)
 
 ---
-**Full Changelog**: https://github.com/BuzzMoody/LabDash/compare/v1.2.0...v1.2.1
+**Full Changelog**: https://github.com/BuzzMoody/LabDash/compare/v1.2.1...v1.2.2
