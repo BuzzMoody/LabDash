@@ -817,7 +817,7 @@ body {
 
 /* Card body */
 .card-body {
-  padding: 1rem;
+  padding: 1rem 1rem 0rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -950,6 +950,7 @@ body {
   margin-top: auto;
   width: 100%; /* prevents wrapper expanding when chips are width: max-content */
 }
+
 .service-stats {
   display: flex;
   flex-wrap: nowrap;
@@ -959,6 +960,7 @@ body {
   scrollbar-width: none;
   user-select: none;
   -webkit-user-select: none;
+  margin-bottom: 0.75rem;
 }
 .service-stats::-webkit-scrollbar { display: none; }
 .service-stats:empty { display: none; }
@@ -1238,7 +1240,10 @@ body {
 body.hide-descriptions-mode .service-card:has(.stat-chip) .service-desc {
     display: none;
 }
-
+body.hide-descriptions-mode .service-desc {
+    height: 100%;
+    align-content: center;
+}
 /* ── Mode: Icons Only (Compact Grid Layout) ── */
 body.icons-only-mode #services-grid:not(.view-grouped) .service-category-badge {
     margin-top: auto;
