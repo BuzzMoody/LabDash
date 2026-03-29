@@ -120,6 +120,19 @@ async function loadServices() {
 			}
 			if (subtitle) document.getElementById('dash-subtitle').textContent = subtitle.toUpperCase();
 			if (refresh_interval) CONFIG.refreshInterval = refresh_interval * 1000;
+			
+			// Apply layout modifiers based on yaml settings:
+			if (config.settings.icons_only) {
+				document.body.classList.add('icons-only-mode');
+			} else {
+				document.body.classList.remove('icons-only-mode');
+			}
+			
+			if (config.settings.hide_descriptions) {
+				document.body.classList.add('hide-descriptions-mode');
+			} else {
+				document.body.classList.remove('hide-descriptions-mode');
+			}
 		}
 
 		return (config?.services ?? []).filter(s => s?.name && s?.url);

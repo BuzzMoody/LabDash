@@ -1094,7 +1094,7 @@ body {
 .toast.hiding  { animation: toast-out 0.3s var(--ease) both; }
 .toast-icon { font-size: 1rem; flex-shrink: 0; }
 
-/* ── Animations ─────────────────────────────────────────────────────────────── */
+/* ── animations ─────────────────────────────────────────────────────────────── */
 @keyframes orb-drift-1 {
   from { transform: translate(0, 0) scale(1); }
   to   { transform: translate(60px, 40px) scale(1.12); }
@@ -1228,4 +1228,87 @@ body {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ==========================================================================
+   Layout Modifiers (Controlled via services.yaml)
+   ========================================================================== */
+
+/* ── Mode: Hide Descriptions (when stats are present) ── */
+body.hide-descriptions-mode .service-card:has(.stat-chip) .service-desc {
+    display: none;
+}
+
+/* ── Mode: Icons Only (Compact Grid Layout) ── */
+body.icons-only-mode #services-grid:not(.view-grouped) .service-category-badge {
+    margin-top: auto;
+    align-self: auto;
+}
+
+body.icons-only-mode #services-grid:not(.view-grouped),
+body.icons-only-mode .cat-section-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+body.icons-only-mode .service-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+body.icons-only-mode .card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin: 0;
+}
+
+body.icons-only-mode .service-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 3.5rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.icons-only-mode .card-title-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 0;
+    gap: 0.5rem;
+}
+
+body.icons-only-mode .service-name {
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.3;
+    margin-bottom: 0px !important;
+}
+
+body.icons-only-mode .service-desc,
+body.icons-only-mode .stats-scroll-wrapper,
+body.icons-only-mode .service-status .status-text {
+    display: none;
+}
+
+body.icons-only-mode .service-status {
+    position: absolute;
+    top: 18px;
+    right: 15px;
+    margin: 0;
+}
+
+/* Update default logo sizing */
+.service-logo-img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
 }
