@@ -72,7 +72,7 @@ async function checkStatus(url) {
 	try {
 		// Proxy the check through PHP — server-side requests have no CORS
 		// restrictions so we always get the real HTTP status code (incl. 502).
-		const res  = await timedFetch(`/ping.php?url=${encodeURIComponent(url)}`, {}, CONFIG.statusTimeout);
+		const res  = await timedFetch(`/ping?url=${encodeURIComponent(url)}`, {}, CONFIG.statusTimeout);
 		const data = await res.json();
 		// status 0 means PHP couldn't reach the host at all
 		if (!data.status || data.status === 502 || data.status === 503 || data.status === 504) return false;
@@ -593,13 +593,13 @@ function startServiceTimers() {
 }
 
 // ── Batch status check ────────────────────────────────────────────────────────
-// Sends all URLs in one request to batch-ping.php (curl_multi parallel HEAD).
+// Sends all URLs in one request to /batch-ping (goroutine fan-out in Go).
 // Falls back gracefully — if batch fails, updateService does individual pings.
 async function batchCheckStatuses(services) {
 	try {
 		const params = new URLSearchParams();
 		services.forEach(svc => params.append('urls[]', svc.endpoint ?? svc.url));
-		const res  = await timedFetch(`/batch-ping.php?${params}`, {}, CONFIG.statusTimeout + 3000);
+		const res  = await timedFetch(`/batch-ping?${params}`, {}, CONFIG.statusTimeout + 3000);
 		return await res.json();
 	} catch {
 		return {};
@@ -611,7 +611,7 @@ async function refreshAll() {
 	const btn = document.getElementById('refresh-btn');
 	btn?.classList.add('spinning');
 
-	// One batch request replaces N individual ping.php calls
+	// One batch request replaces N individual /ping calls
 	const batchResults = await batchCheckStatuses(state.services);
 
 	await Promise.allSettled(state.services.map(svc => {
