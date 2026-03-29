@@ -947,7 +947,7 @@ body {
   position: relative;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  margin-top: -0.5rem !important;
+  margin-top: auto;
   width: 100%; /* prevents wrapper expanding when chips are width: max-content */
 }
 body.hide-descriptions-mode .stats-scroll-wrapper {
