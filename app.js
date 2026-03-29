@@ -414,7 +414,6 @@ async function updateService(svc, statusOverride = null) {
 		}
 
 		updateCounters();
-		setLastUpdated();
 	} finally {
 		state.inFlight.delete(id);
 	}
@@ -641,6 +640,7 @@ async function refreshAll() {
 	}));
 
 	btn?.classList.remove('spinning');
+	setLastUpdated();
 }
 
 // ── Countdown ─────────────────────────────────────────────────────────────────
