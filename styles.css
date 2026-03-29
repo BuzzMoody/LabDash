@@ -943,7 +943,15 @@ html {
   flex-direction: column;
   align-self: stretch;
 }
-#services-grid:not(.view-grouped) .service-category-badge { margin-top: auto; align-self: flex-start; }
+#services-grid:not(.view-grouped) .service-category-badge {
+  margin-top: auto;
+  align-self: flex-start;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+#services-grid:not(.view-grouped) .service-card:hover .service-category-badge {
+  opacity: 1;
+}
 
 .service-category-badge {
   display: inline-flex;
