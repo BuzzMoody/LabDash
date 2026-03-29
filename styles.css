@@ -97,6 +97,19 @@ body {
   overflow-x: hidden;
 }
 
+/* ── Scrollbar ───────────────────────────────────────────────────────────────── */
+/* Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+/* Chromium (Chrome, Edge, Brave) */
+::-webkit-scrollbar              { width: 6px; height: 6px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: rgba(255, 255, 255, 0.12); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(255, 255, 255, 0.22); }
+::-webkit-scrollbar-corner       { background: transparent; }
+
 /* ── Background Layer ───────────────────────────────────────────────────────── */
 .bg-layer {
   position: fixed;
