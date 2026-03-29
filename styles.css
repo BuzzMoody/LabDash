@@ -1229,3 +1229,65 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================================================
+   Layout Modifiers (Controlled via services.yaml)
+   ========================================================================== */
+
+/* ── Mode: Hide Descriptions (when stats are present) ── */
+body.hide-descriptions-mode .service-card:has(.stat-chip) .service-desc {
+    display: none;
+}
+
+
+/* ── Mode: Icons Only (Compressed Layout) ── */
+body.icons-only-mode #services-grid:not(.view-grouped),
+body.icons-only-mode .cat-section-grid {
+    /* Shrink the grid columns to create a dense layout */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.8rem;
+}
+
+body.icons-only-mode .service-card {
+    padding: 1.2rem;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.icons-only-mode .card-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+body.icons-only-mode .card-header {
+    justify-content: center;
+    margin: 0;
+}
+
+/* Hide text, stats, and description in icons-only mode */
+body.icons-only-mode .card-title-block,
+body.icons-only-mode .service-status .status-text,
+body.icons-only-mode .service-desc,
+body.icons-only-mode .stats-scroll-wrapper {
+    display: none;
+}
+
+/* Enlarge the icon and center it */
+body.icons-only-mode .service-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 2.2rem;
+    margin: 0;
+}
+
+/* Un-flow the status indicator and pin it to the corner */
+body.icons-only-mode .service-status {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    margin: 0;
+}
