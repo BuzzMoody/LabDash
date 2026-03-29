@@ -5,11 +5,15 @@
 # =============================================================================
 
 # ── Stage 1: build ────────────────────────────────────────────────────────────
-FROM golang:1.23-alpine AS builder
+# Always build on the native platform so Go cross-compiles instead of
+# running under QEMU emulation — dramatically faster for arm64 targets.
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /build
 
-# Download js-yaml for embedding (not committed to the repo)
+# Separate layer so js-yaml is only re-downloaded when this line changes
 RUN wget -q -O js-yaml.min.js \
         https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js
 
@@ -18,8 +22,10 @@ COPY go.mod main.go index.html ./
 COPY styles.css app.js VERSION release-notes.md ./
 COPY api-managers/ api-managers/
 
-# Compile — fully static binary, debug symbols stripped
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o labdash .
+# Compile — cross-compile to target arch, reuse Go build cache between runs
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -ldflags="-s -w" -o labdash .
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM alpine:3.21
