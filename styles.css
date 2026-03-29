@@ -940,8 +940,6 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  height: 100%;
-  align-content: center;
 }
 
 /* Live stats area */
@@ -951,6 +949,9 @@ body {
   overflow: hidden;
   margin-top: auto;
   width: 100%; /* prevents wrapper expanding when chips are width: max-content */
+}
+body.hide-descriptions-mode .stats-scroll-wrapper {
+  margin-top: -0.25rem !important;
 }
 .service-stats {
   display: flex;
@@ -1241,7 +1242,10 @@ body {
 body.hide-descriptions-mode .service-card:has(.stat-chip) .service-desc {
     display: none;
 }
-
+body.hide-descriptions-mode .service-desc {
+    height: 100%;
+    align-content: center;
+}
 /* ── Mode: Icons Only (Compact Grid Layout) ── */
 body.icons-only-mode #services-grid:not(.view-grouped) .service-category-badge {
     margin-top: auto;
