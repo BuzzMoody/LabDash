@@ -388,6 +388,12 @@ async function updateService(svc, statusOverride = null) {
 								<span class="s-label">${s.label}</span>
 								<span class="s-value">${s.value}</span>
 							</div>`).join('');
+						// Animate in when chips appear for the first time
+						if (!prevStats) {
+							const wrapper = statsEl.parentElement;
+							wrapper.classList.add('stats-entering');
+							wrapper.addEventListener('animationend', () => wrapper.classList.remove('stats-entering'), { once: true });
+						}
 						requestAnimationFrame(() => updateStatsFades(statsEl));
 					} else {
 						// Same structure — update originals AND clones in place so the

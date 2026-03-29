@@ -1025,6 +1025,15 @@ body {
 .service-stats::-webkit-scrollbar { display: none; }
 .service-stats:empty { display: none; }
 
+/* Stats reveal — animates the wrapper from 0 height when chips first appear */
+@keyframes stats-reveal {
+  from { max-height: 0;    opacity: 0; }
+  to   { max-height: 4rem; opacity: 1; }
+}
+.stats-scroll-wrapper.stats-entering {
+  animation: stats-reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Infinite scroll — CSS animation runs on compositor thread (no rAF throttle) */
 @keyframes stats-infinite-scroll {
   from { transform: translateX(0); }
