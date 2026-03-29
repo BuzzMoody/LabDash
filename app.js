@@ -39,6 +39,8 @@ const state = {
 	countdownTimer: null,
 	nextRefreshAt: null,
 	settings: {},
+	updateAvailable: false,
+	latestVersion:   null,
 };
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -746,6 +748,51 @@ function simpleMarkdown(md) {
 	return parts.join('');
 }
 
+// ── Update checker ────────────────────────────────────────────────────────────
+
+function parseSemver(v) {
+	return (v ?? '').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+}
+
+function isNewerVersion(current, latest) {
+	const [ca, cb, cc] = parseSemver(current);
+	const [la, lb, lc] = parseSemver(latest);
+	if (la !== ca) return la > ca;
+	if (lb !== cb) return lb > cb;
+	return lc > cc;
+}
+
+async function checkForUpdate() {
+	try {
+		const btn     = document.getElementById('version-btn');
+		const current = btn?.textContent?.trim() ?? '';
+		if (!current) return;
+
+		const res = await fetch(
+			'https://api.github.com/repos/BuzzMoody/LabDash/releases/latest',
+			{ cache: 'no-store' }
+		);
+		if (!res.ok) return;
+
+		const { tag_name: latest } = await res.json();
+		if (!latest || !isNewerVersion(current, latest)) return;
+
+		state.updateAvailable = true;
+		state.latestVersion   = latest;
+
+		// Add pulsing dot to the version button
+		if (!btn.querySelector('.update-dot')) {
+			const dot = document.createElement('span');
+			dot.className = 'update-dot';
+			dot.title     = `Update available: ${latest}`;
+			btn.appendChild(dot);
+			btn.classList.add('has-update');
+		}
+	} catch {
+		// Silently fail — no internet or GitHub rate-limited
+	}
+}
+
 function initChangelog() {
 	const modal    = document.getElementById('changelog-modal');
 	const bodyEl   = document.getElementById('changelog-body');
@@ -757,7 +804,18 @@ function initChangelog() {
 	const md = (typeof window.__CHANGELOG__ === 'string') ? window.__CHANGELOG__.trim() : '';
 
 	function openModal() {
-		bodyEl.innerHTML = md ? simpleMarkdown(md) : '<p>No release notes available.</p>';
+		let html = '';
+		if (state.updateAvailable && state.latestVersion) {
+			html += `<div class="update-notice">
+				<div class="update-notice-title">🚀 Update available &mdash; ${state.latestVersion}</div>
+				<p>A newer version of LabDash is available. To update, run:</p>
+				<pre class="update-cmd">docker compose pull &amp;&amp; docker compose up -d</pre>
+				<p>Or if using a standalone <code>docker run</code>:</p>
+				<pre class="update-cmd">docker pull buzzmoody/homelab-dash:latest</pre>
+			</div>`;
+		}
+		html += md ? simpleMarkdown(md) : '<p>No release notes available.</p>';
+		bodyEl.innerHTML = html;
 		modal.classList.remove('hidden');
 		document.body.style.overflow = 'hidden';
 	}
@@ -782,6 +840,7 @@ async function init() {
 	initFilters();
 	initViewToggle();
 	initChangelog();
+	checkForUpdate(); // fire-and-forget — updates UI when response arrives
 
 	state.services = await loadServices();
 

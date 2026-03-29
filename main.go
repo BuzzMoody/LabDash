@@ -84,7 +84,7 @@ func main() {
 
 	mux.HandleFunc("GET /ping",       handlePing)
 	mux.HandleFunc("GET /batch-ping", handleBatchPing)
-	mux.Handle("GET /logos/",         http.StripPrefix("/logos/", http.FileServer(http.Dir("/config/logos"))))
+	mux.Handle("GET /logos/",         cacheMiddleware(http.StripPrefix("/logos/", http.FileServer(http.Dir("/config/logos")))))
 
 	staticHandler := http.FileServer(http.FS(assets))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +92,7 @@ func main() {
 			handleIndex(w, r)
 			return
 		}
-		staticHandler.ServeHTTP(w, r)
+		cacheMiddleware(staticHandler).ServeHTTP(w, r)
 	})
 
 	port := os.Getenv("PORT")
@@ -115,6 +115,32 @@ func ensureConfig() {
 	}
 }
 
+// ── Cache middleware ──────────────────────────────────────────────────────────
+//
+// Assets are served with a ?v=<version> query param (injected by the Go
+// template). In production we treat those URLs as immutable and tell the
+// browser it can cache them for a year — the URL changes automatically
+// whenever a new release is deployed, busting the cache.
+//
+// Beta keeps everything uncached so changes are visible immediately.
+// Unversioned requests (e.g. logos) get a short 10-minute cache with
+// must-revalidate so they stay fresh without hammering the server.
+
+func cacheMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isBeta {
+			w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+		} else if r.URL.Query().Get("v") != "" {
+			// Versioned asset — safe to cache indefinitely
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		} else {
+			// Unversioned (logos etc.) — cache for 10 minutes, then revalidate
+			w.Header().Set("Cache-Control", "public, max-age=600, must-revalidate")
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // ── Dashboard page ────────────────────────────────────────────────────────────
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +156,9 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
 		w.Header().Set("Pragma",        "no-cache")
 		w.Header().Set("Expires",       "0")
+	} else {
+		// HTML is tiny and controls asset versioning — always revalidate
+		w.Header().Set("Cache-Control", "no-cache")
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
