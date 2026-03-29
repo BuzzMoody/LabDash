@@ -940,6 +940,8 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  height: 100%;
+  align-content: center;
 }
 
 /* Live stats area */
@@ -959,7 +961,7 @@ body {
   scrollbar-width: none;
   user-select: none;
   -webkit-user-select: none;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 .service-stats::-webkit-scrollbar { display: none; }
 .service-stats:empty { display: none; }
