@@ -1,30 +1,3 @@
-<?php
-// ── Read services.yaml from the mounted config directory ──────────────────────
-// /config/services.yaml is outside the web root — never directly web-accessible.
-// Falls back to a same-directory services.yaml for local development.
-$configPath = '/config/services.yaml';
-if (!file_exists($configPath)) {
-    $configPath = __DIR__ . '/services.yaml';
-}
-$yamlContent = file_exists($configPath) ? file_get_contents($configPath) : '';
-
-// ── Read version from VERSION file ────────────────────────────────────────────
-$versionFile = __DIR__ . '/VERSION';
-$appVersion  = file_exists($versionFile) ? trim(file_get_contents($versionFile)) : '1.0.0';
-
-// ── Read release notes ────────────────────────────────────────────────────────
-$releaseNotesFile = __DIR__ . '/release-notes.md';
-$releaseNotes     = file_exists($releaseNotesFile) ? file_get_contents($releaseNotesFile) : '';
-
-$isBeta = getenv('BETA') === 'true';
-
-if ($isBeta) {
-    header('Cache-Control: no-store, no-cache, must-revalidate');
-    header('Pragma: no-cache');
-    header('Expires: 0');
-}
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,13 +9,13 @@ if ($isBeta) {
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=<?= $isBeta ? filemtime(__DIR__.'/styles.css') : $appVersion ?>" />
+  <link rel="stylesheet" href="styles.css?v={{.AssetVer}}" />
   <!-- Inject services.yaml content — browser never needs to fetch the file itself -->
-  <script>window.__DASHBOARD_YAML__ = <?= json_encode($yamlContent) ?>;</script>
+  <script>window.__DASHBOARD_YAML__ = {{.YAMLContent}};</script>
   <!-- Inject release notes for the changelog modal -->
-  <script>window.__CHANGELOG__ = <?= json_encode($releaseNotes) ?>;</script>
+  <script>window.__CHANGELOG__ = {{.Changelog}};</script>
   <!-- js-yaml is bundled locally so the dashboard works without internet access -->
-  <script src="js-yaml.min.js?v=<?= $isBeta && file_exists(__DIR__.'/js-yaml.min.js') ? filemtime(__DIR__.'/js-yaml.min.js') : $appVersion ?>" onerror="document.write('<script src=\'https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js\'><\/script>')"></script>
+  <script src="js-yaml.min.js?v={{.AssetVer}}" onerror="document.write('<script src=\'https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js\'><\/script>')"></script>
 </head>
 <body>
 
@@ -118,7 +91,7 @@ if ($isBeta) {
           </div>
         </div>
         <div class="sidebar-meta">
-          <button id="version-btn" class="meta-item version-btn" title="View release notes" aria-haspopup="dialog">v<?= htmlspecialchars($appVersion) ?></button>
+          <button id="version-btn" class="meta-item version-btn" title="View release notes" aria-haspopup="dialog">v{{.Version}}</button>
           <span class="meta-sep">·</span>
           <a href="https://github.com/BuzzMoody/LabDash" class="meta-item meta-link" target="_blank" rel="noopener noreferrer">GitHub</a>
           <span class="meta-sep">·</span>
@@ -207,7 +180,7 @@ if ($isBeta) {
     <div class="changelog-backdrop"></div>
     <div class="changelog-panel">
       <div class="changelog-header">
-        <span class="changelog-version-tag">v<?= htmlspecialchars($appVersion) ?></span>
+        <span class="changelog-version-tag">v{{.Version}}</span>
         <h3 id="changelog-title">Release Notes</h3>
         <button class="changelog-close" aria-label="Close release notes">&times;</button>
       </div>
@@ -219,6 +192,6 @@ if ($isBeta) {
   <div id="sidebar-overlay"></div>
   <div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
-  <script type="module" src="app.js?v=<?= $isBeta ? filemtime(__DIR__.'/app.js') : $appVersion ?>"></script>
+  <script type="module" src="app.js?v={{.AssetVer}}"></script>
 </body>
 </html>
