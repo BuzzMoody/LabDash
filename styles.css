@@ -1242,6 +1242,7 @@ body.hide-descriptions-mode .service-card:has(.stat-chip) .service-desc {
 /* ── Mode: Icons Only (Compact Grid Layout) ── */
 #services-grid:not(.view-grouped) .service-category-badge {
     margin-top: auto;
+    align-self: auto;
 }
 
 body.icons-only-mode #services-grid:not(.view-grouped),
@@ -1289,6 +1290,7 @@ body.icons-only-mode .service-name {
     word-break: break-word;
     text-align: center;
     line-height: 1.3;
+    margin-bottom: 0px !important;
 }
 
 body.icons-only-mode .service-desc,
@@ -1299,8 +1301,8 @@ body.icons-only-mode .service-status .status-text {
 
 body.icons-only-mode .service-status {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: 18px;
+    right: 15px;
     margin: 0;
 }
 
