@@ -1240,7 +1240,7 @@ body.hide-descriptions-mode .service-card:has(.stat-chip) .service-desc {
 }
 
 /* ── Mode: Icons Only (Compact Grid Layout) ── */
-#services-grid:not(.view-grouped) .service-category-badge {
+body.icons-only-mode #services-grid:not(.view-grouped) .service-category-badge {
     margin-top: auto;
     align-self: auto;
 }
