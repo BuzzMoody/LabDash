@@ -1,6 +1,7 @@
 'use strict';
 
-import { state } from './state.js';
+import { state }     from './state.js';
+import { showToast } from './utils.js';
 
 // ── Minimal Markdown renderer ─────────────────────────────────────────────────
 // Supports ## headings, - list items, --- horizontal rules, **bold**,
@@ -123,6 +124,16 @@ export function initChangelog() {
 
 	const md = (typeof window.__CHANGELOG__ === 'string') ? window.__CHANGELOG__.trim() : '';
 
+	const ICON_COPY = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+	const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+	function cmdBlock(command) {
+		return `<div class="update-cmd-wrapper">
+			<pre class="update-cmd">${command}</pre>
+			<button class="copy-cmd-btn" title="Copy to clipboard" aria-label="Copy to clipboard">${ICON_COPY}</button>
+		</div>`;
+	}
+
 	function openModal() {
 		let html = '';
 
@@ -130,14 +141,38 @@ export function initChangelog() {
 			html += `<div class="update-notice">
 				<div class="update-notice-title">🚀 Update available &mdash; ${state.latestVersion}</div>
 				<p>A newer version of LabDash is available. To update, run:</p>
-				<pre class="update-cmd">docker compose pull &amp;&amp; docker compose up -d</pre>
+				${cmdBlock('docker compose pull &amp;&amp; docker compose up -d')}
 				<p>Or if using a standalone <code>docker run</code>:</p>
-				<pre class="update-cmd">docker pull buzzmoody/homelab-dash:latest</pre>
+				${cmdBlock('docker pull buzzmoody/homelab-dash:latest')}
 			</div>`;
 		}
 
 		html += md ? simpleMarkdown(md) : '<p>No release notes available.</p>';
 		bodyEl.innerHTML = html;
+
+		// Wire up copy buttons
+		bodyEl.querySelectorAll('.copy-cmd-btn').forEach(copyBtn => {
+			copyBtn.addEventListener('click', async () => {
+				const text = copyBtn.closest('.update-cmd-wrapper')
+					.querySelector('.update-cmd')
+					.textContent.trim()
+					// Decode the HTML entity we used in the template
+					.replace(/&amp;/g, '&');
+				try {
+					await navigator.clipboard.writeText(text);
+					copyBtn.innerHTML = ICON_CHECK;
+					copyBtn.classList.add('copied');
+					showToast('Command copied to clipboard', 'success');
+					setTimeout(() => {
+						copyBtn.innerHTML = ICON_COPY;
+						copyBtn.classList.remove('copied');
+					}, 2000);
+				} catch {
+					showToast('Could not access clipboard', 'error');
+				}
+			});
+		});
+
 		modal.classList.remove('hidden');
 		document.body.style.overflow = 'hidden';
 	}
