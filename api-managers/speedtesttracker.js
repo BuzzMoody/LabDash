@@ -12,7 +12,7 @@ export async function api_speedtesttracker(svc, timedFetch, utils) {
 		if (!data || data.failed) return null;
 
 		const available = {
-			ping:     () => ({ label: 'Ping', value: `${parseFloat(data.ping).toFixed(1)} ms`,      emoji: '📡' }),
+			ping:     () => ({ label: 'Ping', value: `${parseFloat(data.ping).toFixed(1)} ms`,      emoji: '🏓' }),
 			download: () => ({ label: 'Down', value: `${parseFloat(data.download).toFixed(1)} Mbps`, emoji: '⬇️' }),
 			upload:   () => ({ label: 'Up',   value: `${parseFloat(data.upload).toFixed(1)} Mbps`,   emoji: '⬆️' }),
 		};

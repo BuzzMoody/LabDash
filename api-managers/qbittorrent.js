@@ -21,7 +21,7 @@ export async function api_qbittorrent(svc, timedFetch) {
 		};
 
 		const available = {
-			active: () => ({ label: 'Active', value: active.length,                        emoji: '✅' }),
+			active: () => ({ label: 'Active', value: active.length,                        emoji: '📥' }),
 			dl:     () => ({ label: 'DL',     value: fmtSpeed(transfer.dl_info_speed ?? 0), emoji: '⬇️' }),
 			ul:     () => ({ label: 'UL',     value: fmtSpeed(transfer.up_info_speed ?? 0), emoji: '⬆️' }),
 		};
