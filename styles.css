@@ -943,6 +943,15 @@ html {
   flex-direction: column;
   align-self: stretch;
 }
+/* Default: name translated down to appear vertically centred in the card header.
+   On hover it slides back up to its natural top position as the badge fades in. */
+#services-grid:not(.view-grouped) .service-name {
+  transform: translateY(0.75rem);
+  transition: transform 0.25s ease;
+}
+#services-grid:not(.view-grouped) .service-card:hover .service-name {
+  transform: translateY(0);
+}
 #services-grid:not(.view-grouped) .service-category-badge {
   margin-top: auto;
   align-self: flex-start;
