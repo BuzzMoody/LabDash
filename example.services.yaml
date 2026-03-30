@@ -48,12 +48,26 @@
 #    e.g. refresh: 5  → update every 5 seconds
 #         refresh: 300 → update every 5 minutes
 #
+#  emoji_stats field:
+#    Set to true globally (in settings:) to show emojis instead of text labels
+#    on all stat chips. Can also be set per-service to override the global setting.
+#    Hovering an emoji chip shows the original label as a tooltip.
+#
+#  icons_only field (settings only):
+#    Set to true to hide service names and show only icons for a compact layout.
+#
+#  hide_descriptions field (settings only):
+#    Set to true to hide description text on all cards.
+#
 # =============================================================================
 
 settings:
   title: "My Homelab"
   subtitle: "Home Server"
   refresh_interval: 30          # seconds between auto-refresh
+  # emoji_stats: true           # show emojis instead of text labels on stat chips
+  # icons_only: true            # hide service names, show icons only
+  # hide_descriptions: true     # hide description text on all cards
 
 services:
 
@@ -68,6 +82,7 @@ services:
     api_key: "your-jellyfin-api-key"
     args: "movies, series, episodes"
     refresh: 300                  # update every 5 minutes
+    # emoji_stats: true           # override global emoji_stats for this service only
 
   - name: Sonarr
     url: "http://192.168.1.10:8989"
