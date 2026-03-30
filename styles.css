@@ -581,6 +581,10 @@ html {
   font-size: 0.73rem;
   margin: 0.35rem 0 0;
 }
+.update-cmd-wrapper {
+  position: relative;
+  margin: 0.35rem 0 0.5rem;
+}
 .update-cmd {
   display: block;
   font-family: var(--mono);
@@ -589,11 +593,30 @@ html {
   background: rgba(0,0,0,0.3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.4rem 0.65rem;
-  margin: 0.35rem 0 0.5rem;
+  padding: 0.4rem 2.2rem 0.4rem 0.65rem;
+  margin: 0;
   white-space: pre;
   overflow-x: auto;
 }
+.copy-cmd-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+.copy-cmd-btn:hover  { color: var(--text-1); background: rgba(255,255,255,0.08); }
+.copy-cmd-btn.copied { color: #86efac; }
 .update-notice code {
   font-family: var(--mono);
   font-size: 0.68rem;
