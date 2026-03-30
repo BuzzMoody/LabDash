@@ -1371,7 +1371,7 @@ body.icons-only-mode #services-grid:not(.view-grouped) .service-category-badge {
 
 body.icons-only-mode #services-grid:not(.view-grouped),
 body.icons-only-mode .cat-section-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
     gap: 1rem;
 }
 
@@ -1388,6 +1388,7 @@ body.icons-only-mode .card-header {
     align-items: center;
     width: 100%;
     margin: 0;
+    gap: 0;
 }
 
 body.icons-only-mode .service-icon {
@@ -1409,12 +1410,7 @@ body.icons-only-mode .card-title-block {
 }
 
 body.icons-only-mode .service-name {
-    white-space: normal;
-    overflow: visible;
-    word-break: break-word;
-    text-align: center;
-    line-height: 1.3;
-    margin-bottom: 0px !important;
+    display: none;
 }
 
 body.icons-only-mode .service-desc,
@@ -1424,10 +1420,8 @@ body.icons-only-mode .service-status .status-text {
 }
 
 body.icons-only-mode .service-status {
-    position: absolute;
-    top: 18px;
-    right: 15px;
-    margin: 0;
+    position: relative;
+    margin: 0.5rem 0;
 }
 
 /* Update default logo sizing */
