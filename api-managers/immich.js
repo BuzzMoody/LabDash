@@ -10,9 +10,9 @@ export async function api_immich(svc, timedFetch, utils) {
 		const d = await res.json();
 
 		const available = {
-			photos: () => ({ label: 'Photos', value: utils.fmtNum(d.photos) }),
-			videos: () => ({ label: 'Videos', value: utils.fmtNum(d.videos) }),
-			usage:  () => ({ label: 'Usage',  value: utils.fmtBytes(d.usage) }),
+			photos: () => ({ label: 'Photos', value: utils.fmtNum(d.photos),   emoji: '📸' }),
+			videos: () => ({ label: 'Videos', value: utils.fmtNum(d.videos),   emoji: '🎬' }),
+			usage:  () => ({ label: 'Usage',  value: utils.fmtBytes(d.usage),  emoji: '💽' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

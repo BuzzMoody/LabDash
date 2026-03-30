@@ -11,9 +11,9 @@ export async function api_emby(svc, timedFetch, utils) {
 		const data = await res.json();
 
 		const available = {
-			movies:   () => ({ label: 'Movies',   value: utils.fmtNum(data.MovieCount   ?? 0) }),
-			series:   () => ({ label: 'Series',   value: utils.fmtNum(data.SeriesCount  ?? 0) }),
-			episodes: () => ({ label: 'Episodes', value: utils.fmtNum(data.EpisodeCount ?? 0) }),
+			movies:   () => ({ label: 'Movies',   value: utils.fmtNum(data.MovieCount   ?? 0), emoji: '🎬' }),
+			series:   () => ({ label: 'Series',   value: utils.fmtNum(data.SeriesCount  ?? 0), emoji: '📺' }),
+			episodes: () => ({ label: 'Episodes', value: utils.fmtNum(data.EpisodeCount ?? 0), emoji: '🎞️' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

@@ -14,8 +14,8 @@ export async function api_adguard(svc, timedFetch, utils) {
 		const pct     = total > 0 ? ((blocked / total) * 100).toFixed(1) : '0.0';
 
 		const available = {
-			blocked: () => ({ label: 'Blocked', value: `${pct}%` }),
-			queries: () => ({ label: 'Queries', value: utils.fmtNum(total) }),
+			blocked: () => ({ label: 'Blocked', value: `${pct}%`,            emoji: '🛡️' }),
+			queries: () => ({ label: 'Queries', value: utils.fmtNum(total),  emoji: '🔍' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

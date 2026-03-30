@@ -10,8 +10,8 @@ export async function api_homeassistant(svc, timedFetch) {
 		const states = await res.json();
 
 		const available = {
-			entities: () => ({ label: 'Entities', value: states.length }),
-			active:   () => ({ label: 'Active',   value: states.filter(s => s.state === 'on').length }),
+			entities: () => ({ label: 'Entities', value: states.length,                                emoji: '🏠' }),
+			active:   () => ({ label: 'Active',   value: states.filter(s => s.state === 'on').length,  emoji: '✅' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

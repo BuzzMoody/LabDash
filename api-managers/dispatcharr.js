@@ -25,7 +25,7 @@ export async function api_dispatcharr(svc, timedFetch, utils) {
 		const channels = await res.json();
 
 		const available = {
-			channels: () => ({ label: 'Channels', value: utils.fmtNum(channels.length) }),
+			channels: () => ({ label: 'Channels', value: utils.fmtNum(channels.length), emoji: '📡' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

@@ -29,12 +29,18 @@ export const fmtBytes = (b) => {
 // ── Stat chip HTML ────────────────────────────────────────────────────────────
 // Shared by render.js (initial card build) and services.js (stats rebuild).
 
-export const buildChipsHTML = (stats) =>
-	stats.map(s => `
-		<div class="stat-chip">
-			<span class="s-label">${s.label}</span>
+export function buildChipsHTML(stats, emojiMode = false) {
+	return stats.map(s => {
+		const emoji      = emojiMode ? (s.emoji ?? null) : null;
+		const labelClass = emoji ? 's-label s-label-emoji' : 's-label';
+		const titleAttr  = emoji ? ` title="${s.label}"` : '';
+		const labelText  = emoji ?? s.label;
+		return `<div class="stat-chip">
+			<span class="${labelClass}"${titleAttr}>${labelText}</span>
 			<span class="s-value">${s.value}</span>
-		</div>`).join('');
+		</div>`;
+	}).join('');
+}
 
 // ── Debounce ──────────────────────────────────────────────────────────────────
 

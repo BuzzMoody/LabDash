@@ -1113,6 +1113,12 @@ html {
   font-family: var(--font);
   font-weight: 600;
 }
+.stat-chip .s-label-emoji {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+  margin-left: -0.2rem;
+}
 .stat-chip .s-value {
   font-weight: 600;
   color: var(--card-accent);

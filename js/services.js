@@ -141,13 +141,14 @@ export async function updateService(svc, statusOverride = null) {
 				state.statsMap[id] = stats;
 				const statsEl    = document.getElementById(`stats-${id}`);
 				if (statsEl) {
+					const emojiMode  = !!(svc.emoji_stats ?? state.settings?.emoji_stats);
 					const prevLabels = (prevStats ?? []).map(s => s.label).join(',');
 					const newLabels  = stats.map(s => s.label).join(',');
 
 					if (prevLabels !== newLabels) {
 						// Structure changed — stop scroll, rebuild all chips, restart scroll
 						statsEl.parentElement?._stopScroll?.();
-						statsEl.innerHTML = buildChipsHTML(stats);
+						statsEl.innerHTML = buildChipsHTML(stats, emojiMode);
 						requestAnimationFrame(() => updateStatsFades(statsEl));
 					} else {
 						// Same structure — update originals and clones in place so the

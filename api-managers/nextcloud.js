@@ -15,9 +15,9 @@ export async function api_nextcloud(svc, timedFetch, utils) {
 		const sys = d?.ocs?.data?.server;
 
 		const available = {
-			files: () => ({ label: 'Files', value: utils.fmtNum(nc?.storage?.num_files) }),
-			users: () => ({ label: 'Users', value: utils.fmtNum(nc?.storage?.num_users) }),
-			php:   () => sys?.php?.version ? { label: 'PHP', value: sys.php.version.split('.').slice(0, 2).join('.') } : null,
+			files: () => ({ label: 'Files', value: utils.fmtNum(nc?.storage?.num_files), emoji: '📄' }),
+			users: () => ({ label: 'Users', value: utils.fmtNum(nc?.storage?.num_users), emoji: '👤' }),
+			php:   () => sys?.php?.version ? { label: 'PHP', value: sys.php.version.split('.').slice(0, 2).join('.'), emoji: '🐘' } : null,
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

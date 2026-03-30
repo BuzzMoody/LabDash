@@ -20,9 +20,9 @@ export async function api_portainer(svc, timedFetch) {
 		});
 
 		const available = {
-			endpoints: () => ({ label: 'Endpoints', value: eps.length }),
-			running:   () => ({ label: 'Running',   value: `${running}/${total}` }),
-			stacks:    () => ({ label: 'Stacks',    value: stacks }),
+			endpoints: () => ({ label: 'Endpoints', value: eps.length,            emoji: '🔗' }),
+			running:   () => ({ label: 'Running',   value: `${running}/${total}`, emoji: '🐳' }),
+			stacks:    () => ({ label: 'Stacks',    value: stacks,                emoji: '🏗️' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

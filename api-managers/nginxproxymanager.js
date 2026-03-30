@@ -48,12 +48,12 @@ export async function api_nginxproxymanager(svc, timedFetch, utils) {
 		const version = versionRes?.ok ? await versionRes.json() : null;
 
 		const available = {
-			proxy:       () => hosts   ? { label: 'Proxy',    value: utils.fmtNum(hosts.proxy ?? 0) }       : null,
-			redirection: () => hosts   ? { label: 'Redirect', value: utils.fmtNum(hosts.redirection ?? 0) } : null,
-			stream:      () => hosts   ? { label: 'Stream',   value: utils.fmtNum(hosts.stream ?? 0) }      : null,
-			dead:        () => hosts   ? { label: 'Dead',     value: utils.fmtNum(hosts.dead ?? 0) }        : null,
-			certs:       () => certs   ? { label: 'Certs',    value: utils.fmtNum(certs.length) }           : null,
-			version:     () => version ? { label: 'Version',  value: version.update_available ? `${version.current} ↑` : version.current } : null,
+			proxy:       () => hosts   ? { label: 'Proxy',    value: utils.fmtNum(hosts.proxy ?? 0),        emoji: '🎭' } : null,
+			redirection: () => hosts   ? { label: 'Redirect', value: utils.fmtNum(hosts.redirection ?? 0),  emoji: '🔄' } : null,
+			stream:      () => hosts   ? { label: 'Stream',   value: utils.fmtNum(hosts.stream ?? 0),       emoji: '🌊' } : null,
+			dead:        () => hosts   ? { label: 'Dead',     value: utils.fmtNum(hosts.dead ?? 0),         emoji: '💀' } : null,
+			certs:       () => certs   ? { label: 'Certs',    value: utils.fmtNum(certs.length),            emoji: '🔒' } : null,
+			version:     () => version ? { label: 'Version',  value: version.update_available ? `${version.current} ↑` : version.current, emoji: '🏷️' } : null,
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

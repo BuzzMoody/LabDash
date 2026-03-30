@@ -10,8 +10,8 @@ export async function api_radarr(svc, timedFetch) {
 		const movies = await res.json();
 
 		const available = {
-			movies:     () => ({ label: 'Movies',     value: movies.length }),
-			downloaded: () => ({ label: 'Downloaded', value: movies.filter(m => m.hasFile).length }),
+			movies:     () => ({ label: 'Movies',     value: movies.length,                          emoji: '🎬' }),
+			downloaded: () => ({ label: 'Downloaded', value: movies.filter(m => m.hasFile).length,   emoji: '✅' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

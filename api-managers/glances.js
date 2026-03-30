@@ -9,10 +9,10 @@ export async function api_glances(svc, timedFetch) {
 		const d = await r.json();
 
 		const available = {
-			cpu:  () => ({ label: 'CPU',  value: `${parseFloat(d.cpu).toFixed(1)}%` }),
-			ram:  () => ({ label: 'RAM',  value: `${parseFloat(d.mem).toFixed(1)}%` }),
-			swap: () => d.swap != null ? { label: 'Swap', value: `${parseFloat(d.swap).toFixed(1)}%` } : null,
-			load: () => d.load != null ? { label: 'Load', value: parseFloat(d.load).toFixed(1) } : null,
+			cpu:  () => ({ label: 'CPU',  value: `${parseFloat(d.cpu).toFixed(1)}%`,  emoji: '🔲' }),
+			ram:  () => ({ label: 'RAM',  value: `${parseFloat(d.mem).toFixed(1)}%`,  emoji: '🐏' }),
+			swap: () => d.swap != null ? { label: 'Swap', value: `${parseFloat(d.swap).toFixed(1)}%`, emoji: '💾' } : null,
+			load: () => d.load != null ? { label: 'Load', value: parseFloat(d.load).toFixed(1),       emoji: '⚖️' } : null,
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);
