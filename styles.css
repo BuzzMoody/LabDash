@@ -1365,8 +1365,7 @@ body.hide-descriptions-mode .service-desc {
 }
 /* ── Mode: Icons Only (Compact Grid Layout) ── */
 body.icons-only-mode #services-grid:not(.view-grouped) .service-category-badge {
-    margin-top: auto;
-    align-self: auto;
+    display: none;
 }
 
 body.icons-only-mode #services-grid:not(.view-grouped),
