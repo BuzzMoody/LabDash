@@ -16,8 +16,8 @@ export async function api_grafana(svc, timedFetch) {
 		]);
 
 		const available = {
-			dashboards: () => ({ label: 'Dashboards', value: dashboards.length }),
-			sources:    () => ({ label: 'Sources',    value: sources.length }),
+			dashboards: () => ({ label: 'Dashboards', value: dashboards.length, emoji: '📊' }),
+			sources:    () => ({ label: 'Sources',    value: sources.length,    emoji: '🔌' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

@@ -10,8 +10,8 @@ export async function api_sonarr(svc, timedFetch) {
 		const series = await res.json();
 
 		const available = {
-			series:    () => ({ label: 'Series',    value: series.length }),
-			monitored: () => ({ label: 'Monitored', value: series.filter(s => s.monitored).length }),
+			series:    () => ({ label: 'Series',    value: series.length,                              emoji: '📺' }),
+			monitored: () => ({ label: 'Monitored', value: series.filter(s => s.monitored).length,     emoji: '👁️' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

@@ -43,10 +43,10 @@ export async function api_pihole(svc, timedFetch, utils) {
 		const frequency = d.queries?.frequency ?? 0;
 
 		const available = {
-			total:           () => ({ label: 'Queries',   value: utils.fmtNum(total) }),
-			blocked:         () => ({ label: 'Blocked',   value: utils.fmtNum(blocked) }),
-			percent_blocked: () => ({ label: 'Blocked %', value: `${pct}%` }),
-			frequency:       () => ({ label: 'Freq',      value: `${parseFloat(frequency).toFixed(1)}/s` }),
+			total:           () => ({ label: 'Queries',   value: utils.fmtNum(total),                        emoji: '🔍' }),
+			blocked:         () => ({ label: 'Blocked',   value: utils.fmtNum(blocked),                      emoji: '🛡️' }),
+			percent_blocked: () => ({ label: 'Blocked %', value: `${pct}%`,                                  emoji: '🛡️' }),
+			frequency:       () => ({ label: 'Freq',      value: `${parseFloat(frequency).toFixed(1)}/s`,    emoji: '📡' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

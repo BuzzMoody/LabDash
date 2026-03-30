@@ -27,6 +27,7 @@ export function buildCardHTML(svc) {
 	const color       = catColor(svc.category);
 	const status      = state.statusMap[id] ?? 'loading';
 	const stats       = state.statsMap[id]  ?? [];
+	const emojiMode   = !!(svc.emoji_stats ?? state.settings?.emoji_stats);
 	const statusLabel = { online: 'Online', offline: 'Offline', loading: 'Checking…' }[status] ?? '—';
 
 	return `
@@ -51,7 +52,7 @@ export function buildCardHTML(svc) {
 				</div>
 				<p class="service-desc" id="desc-${id}">${svc.description ?? ''}</p>
 				<div class="stats-scroll-wrapper">
-					<div class="service-stats" id="stats-${id}">${buildChipsHTML(stats)}</div>
+					<div class="service-stats" id="stats-${id}">${buildChipsHTML(stats, emojiMode)}</div>
 				</div>
 			</div>
 			<div class="card-accent-bar"></div>

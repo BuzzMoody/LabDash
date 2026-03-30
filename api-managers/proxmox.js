@@ -14,8 +14,8 @@ export async function api_proxmox(svc, timedFetch) {
 		const lxcs = data.filter(r => r.type === 'lxc');
 
 		const available = {
-			vms:  () => ({ label: 'VMs',  value: `${vms.filter(v => v.status === 'running').length}/${vms.length}` }),
-			lxcs: () => ({ label: 'LXCs', value: `${lxcs.filter(l => l.status === 'running').length}/${lxcs.length}` }),
+			vms:  () => ({ label: 'VMs',  value: `${vms.filter(v => v.status === 'running').length}/${vms.length}`,   emoji: '🖥️' }),
+			lxcs: () => ({ label: 'LXCs', value: `${lxcs.filter(l => l.status === 'running').length}/${lxcs.length}`, emoji: '📦' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

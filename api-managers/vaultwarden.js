@@ -10,7 +10,7 @@ export async function api_vaultwarden(svc, timedFetch) {
 		const version = await res.json();
 
 		const available = {
-			version: () => ({ label: 'Version', value: version }),
+			version: () => ({ label: 'Version', value: version, emoji: '📦' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);
