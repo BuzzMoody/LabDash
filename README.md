@@ -12,12 +12,15 @@ A clean, fast, self-hosted homelab dashboard. Monitor all your services at a gla
 
 - **Live status indicators** — every service is polled on a configurable interval and shown as Online, Offline, or Checking
 - **Live stats** — 18 supported services expose real-time data directly on their card (media counts, CPU/RAM, torrent speeds, DNS stats, and more)
+- **Emoji stat chips** — optionally replace stat label text with emojis, globally or per service
 - **Per-service refresh rates** — fast-changing services like Glances can refresh every 5 seconds while slower ones like Immich refresh every 5 minutes
 - **Category grouping** — services are colour-coded and grouped by category with a filterable sidebar
 - **Search** — filter services by name, category, or description in real time
 - **Scrollable stat chips** — stats sit on a single draggable/swipeable row at the bottom of each card
 - **Flat or grouped view** — toggle between a single grid or sections grouped by category
 - **Custom logos** — drop your own SVG/PNG logos into `config/logos/`
+- **Icons-only mode** — hide service names and show only icons for a compact layout
+- **Hide descriptions** — strip description text from all cards for a cleaner look
 - **Docker-first** — single container, one config file, done
 
 ---
@@ -69,7 +72,12 @@ settings:
   title: "My Homelab"         # dashboard title (displayed top-left)
   subtitle: "Home Server"     # subtitle line below the title
   refresh_interval: 30        # default seconds between service refreshes
+  emoji_stats: true           # show emoji instead of text labels on all stat chips
+  icons_only: true            # hide service names — show icons only
+  hide_descriptions: true     # hide description text on all cards
 ```
+
+All settings are optional. `emoji_stats`, `icons_only`, and `hide_descriptions` default to `false`.
 
 ### Service Fields
 
@@ -88,6 +96,7 @@ settings:
 | `password` | No | Password for services that use login-based auth |
 | `args` | No | Comma-separated list of stat keys to display (see Live Services) |
 | `refresh` | No | Per-service refresh interval in seconds, overrides the global setting |
+| `emoji_stats` | No | Show emoji instead of text labels on this service's stat chips |
 
 ### Minimal service example
 
@@ -112,6 +121,7 @@ settings:
   api_key: "your-jellyfin-api-key"
   args: "movies, series, episodes"
   refresh: 300
+  emoji_stats: true
 ```
 
 ---
@@ -184,6 +194,23 @@ args: "version"               # show one chip
 ```
 
 Stats appear in the order you list them and are displayed on a horizontally scrollable row — you can drag or swipe to see more if they overflow the card width.
+
+### Emoji stat chips
+
+When `emoji_stats: true` is set (globally in `settings:` or on an individual service), stat chips display an emoji instead of a text label. Hovering over a chip shows the original label as a tooltip.
+
+```yaml
+# Global — all services use emoji chips
+settings:
+  emoji_stats: true
+
+# Per-service — only this service uses emoji chips
+- name: Proxmox VE
+  emoji_stats: true
+  ...
+```
+
+Per-service `emoji_stats` takes precedence over the global setting.
 
 ### Per-service refresh rate
 
@@ -435,6 +462,87 @@ api_key: "your-api-key"   # optional
 
 ---
 
+## Adding Your Own API Manager
+
+LabDash is designed so that adding support for a new service only requires creating a single file. No other files need to be modified.
+
+### 1. Create the handler file
+
+Add a new file to `api-managers/` named after your service (lowercase, no spaces):
+
+```
+api-managers/myservice.js
+```
+
+### 2. Write the handler function
+
+The function must be a named export following the pattern `api_<name>`. It receives three arguments:
+
+- `svc` — the full service object from `services.yaml` (gives you access to `svc.url`, `svc.api_key`, `svc.args`, etc.)
+- `timedFetch` — a pre-configured `fetch` wrapper that applies a timeout. Use this instead of `fetch` directly.
+- `utils` — helper functions: `utils.fmtNum(n)` (locale-formatted number) and `utils.fmtBytes(b)` (auto-scaled bytes string)
+
+The function must return an array of stat objects, or `null` if the fetch fails.
+
+Each stat object has:
+
+| Field | Required | Description |
+|---|---|---|
+| `label` | Yes | The text label shown on the chip (also used as the tooltip when `emoji_stats` is on) |
+| `value` | Yes | The value shown on the chip — always convert to a string or number |
+| `emoji` | No | Emoji shown instead of the label when `emoji_stats` is enabled |
+
+```js
+export async function api_myservice(svc, timedFetch, utils) {
+    const args = (svc.args ?? '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+    if (!args.length) return null;
+
+    try {
+        const base    = (svc.endpoint ?? svc.url).replace(/\/$/, '');
+        const headers = svc.api_key ? { 'Authorization': `Bearer ${svc.api_key}` } : {};
+        const res     = await timedFetch(`${base}/api/stats`, { headers });
+        if (!res.ok) return null;
+
+        const data = await res.json();
+
+        const available = {
+            users:  () => ({ label: 'Users',  value: utils.fmtNum(data.userCount),  emoji: '👤' }),
+            uptime: () => ({ label: 'Uptime', value: `${data.uptimeDays}d`,          emoji: '⏱️' }),
+        };
+
+        return args.map(a => available[a]?.()).filter(Boolean);
+    } catch { return null; }
+}
+```
+
+### 3. Register the handler
+
+Open `api-managers/index.js` and add your handler to the imports and the `API_HANDLERS` map:
+
+```js
+import { api_myservice } from './myservice.js';
+
+export const API_HANDLERS = {
+    // ... existing handlers ...
+    myservice: api_myservice,
+};
+```
+
+### 4. Use it in services.yaml
+
+```yaml
+- name: My Service
+  url: "http://192.168.1.10:1234"
+  category: Infrastructure
+  api_type: myservice
+  api_key: "your-api-key"
+  args: "users, uptime"
+```
+
+That's it — no changes needed anywhere else. The `emoji_stats` feature works automatically for any stat that includes an `emoji` field.
+
+---
+
 ## Logos
 
 ### Where to get icons
@@ -488,12 +596,23 @@ LabDash/
 │   ├── jellyfin.js
 │   ├── proxmox.js
 │   └── ...
+├── js/                    # Frontend ES modules
+│   ├── config.js          # Global config constants
+│   ├── state.js           # Shared runtime state
+│   ├── services.js        # Service loading, polling, and refresh logic
+│   ├── render.js          # Card and grid rendering
+│   ├── ui.js              # Sidebar, search, filters, and view toggles
+│   ├── stats.js           # Stat chip scroll/drag behaviour
+│   ├── utils.js           # Shared helpers (formatting, fetch, chips)
+│   ├── counters.js        # Online/offline/total counters
+│   └── updates.js         # Update checker and changelog modal
 ├── config/                # Mounted volume — your config lives here
 │   ├── services.yaml      # Your service definitions
 │   └── logos/             # Your custom logo images
-├── app.js                 # Main dashboard logic
+├── app.js                 # Entry point — wires up all modules
 ├── styles.css             # All styles
-├── index.php              # Entry point / YAML injection
+├── index.html             # Dashboard shell and template
+├── main.go                # Go HTTP server — serves assets and proxies status checks
 ├── docker-compose.yml
 └── VERSION                # Current version number
 ```
