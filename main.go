@@ -21,7 +21,7 @@ import (
 //go:embed index.html
 var indexHTML string
 
-//go:embed styles.css app.js js-yaml.min.js api-managers
+//go:embed styles.css app.js js-yaml.min.js api-managers js
 var assets embed.FS
 
 //go:embed VERSION
