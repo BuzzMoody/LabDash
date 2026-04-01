@@ -11,7 +11,8 @@ import { updateCounters }   from './counters.js';
 // Tracks services currently in the offline → loading → online transition so
 // pending timers can be cancelled if the service changes state again.
 
-const recoveringTimers = {};
+const recoveringTimers  = {};
+const loadingStartedAt  = {}; // svcId → timestamp when Checking… was first shown
 
 // ── Status element helper ──────────────────────────────────────────────────────
 // Updates status classes and text in-place rather than replacing innerHTML,
@@ -122,8 +123,12 @@ export async function updateService(svc, statusOverride = null) {
 		const prevStatus = state.statusMap[id];
 		let online;
 
+		// Track whether Checking… was already showing before we got the result
+		// (set here by a prior refreshAll pre-show, or below for individual pings)
+		let preShowedLoading = !!loadingStartedAt[id];
+
 		if (statusOverride !== null) {
-			// Status supplied by batch ping — record timestamp and use it directly
+			// Status supplied by batch ping — result already known
 			online = statusOverride;
 			state.lastStatusCheck[id] = Date.now();
 		} else {
@@ -135,6 +140,12 @@ export async function updateService(svc, statusOverride = null) {
 				|| prevStatus === 'offline';
 
 			if (pingDue) {
+				// For offline services, show Checking… immediately while the ping runs
+				if (prevStatus === 'offline' && !loadingStartedAt[id]) {
+					loadingStartedAt[id] = now;
+					setStatusEl(document.getElementById(`status-${id}`), 'loading');
+					preShowedLoading = true;
+				}
 				online = await checkStatus(svc.endpoint ?? svc.url);
 				state.lastStatusCheck[id] = now;
 			} else {
@@ -146,16 +157,21 @@ export async function updateService(svc, statusOverride = null) {
 		const newStatus = online ? 'online' : 'offline';
 		state.statusMap[id] = newStatus;
 
-		// Update status badge only when the state actually changes
-		const statusEl = document.getElementById(`status-${id}`);
-		if (statusEl && (prevStatus !== newStatus || prevStatus === 'loading')) {
-			// Cancel any pending recovery transition for this service
+		// Update badge when status changes, or when we pre-showed loading and need
+		// to resolve it (even if status is unchanged, e.g. offline → still offline)
+		const statusEl    = document.getElementById(`status-${id}`);
+		const needsUpdate = prevStatus !== newStatus || prevStatus === 'loading' || preShowedLoading;
+		if (statusEl && needsUpdate) {
 			clearTimeout(recoveringTimers[id]);
 			delete recoveringTimers[id];
 
 			if (prevStatus === 'offline' && newStatus === 'online') {
-				// Offline → loading → online: hold loading state for at least 2s
-				// so the user sees the intermediate step before turning green.
+				// Ensure Checking… is visible for at least 2 seconds total —
+				// subtract however long it was already showing before the result came in
+				const elapsed = Date.now() - (loadingStartedAt[id] ?? Date.now());
+				delete loadingStartedAt[id];
+				const waitMs  = Math.max(0, 2000 - elapsed);
+
 				state.statusMap[id] = 'loading';
 				setStatusEl(statusEl, 'loading');
 				recoveringTimers[id] = setTimeout(() => {
@@ -165,8 +181,10 @@ export async function updateService(svc, statusOverride = null) {
 						setStatusEl(statusEl, 'online');
 						updateCounters();
 					}
-				}, 2000);
+				}, waitMs);
 			} else {
+				// Covers: offline→offline (loading→offline transition), online→offline, etc.
+				delete loadingStartedAt[id];
 				setStatusEl(statusEl, newStatus);
 			}
 		}
@@ -232,6 +250,18 @@ export async function batchCheckStatuses(services) {
 export async function refreshAll() {
 	const btn = document.getElementById('refresh-btn');
 	btn?.classList.add('spinning');
+
+	// Pre-show Checking… on offline services before the batch ping fires so the
+	// user gets immediate visual feedback. Record the timestamp so the 2s minimum
+	// in updateService accounts for time already spent showing the loading state.
+	const now = Date.now();
+	state.services.forEach(svc => {
+		const id = svcId(svc);
+		if (state.statusMap[id] === 'offline') {
+			loadingStartedAt[id] = loadingStartedAt[id] ?? now;
+			setStatusEl(document.getElementById(`status-${id}`), 'loading');
+		}
+	});
 
 	const batchResults = await batchCheckStatuses(state.services);
 
