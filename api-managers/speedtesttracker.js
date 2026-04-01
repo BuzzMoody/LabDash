@@ -13,8 +13,8 @@ export async function api_speedtesttracker(svc, timedFetch, utils) {
 
 		const available = {
 			ping:     () => ({ label: 'Ping', value: `${parseFloat(data.ping).toFixed(1)} ms`,      emoji: '🏓' }),
-			download: () => ({ label: 'Down', value: `${parseFloat(data.download).toFixed(1)} Mbps`, emoji: '⬇️' }),
-			upload:   () => ({ label: 'Up',   value: `${parseFloat(data.upload).toFixed(1)} Mbps`,   emoji: '⬆️' }),
+			download: () => ({ label: 'DL', value: `${parseFloat(data.download).toFixed(1)} Mbps`, emoji: '⬇️' }),
+			upload:   () => ({ label: 'UL', value: `${parseFloat(data.upload).toFixed(1)} Mbps`,   emoji: '⬆️' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);
