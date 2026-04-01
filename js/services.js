@@ -7,6 +7,27 @@ import { svcId, fmtNum, fmtBytes, timedFetch, checkStatus, showToast, buildChips
 import { updateStatsFades } from './stats.js';
 import { updateCounters }   from './counters.js';
 
+// ── Recovery timers ───────────────────────────────────────────────────────────
+// Tracks services currently in the offline → loading → online transition so
+// pending timers can be cancelled if the service changes state again.
+
+const recoveringTimers = {};
+
+// ── Status element helper ──────────────────────────────────────────────────────
+// Updates status classes and text in-place rather than replacing innerHTML,
+// so CSS transitions on the parent element fire correctly.
+
+const STATUS_LABELS = { online: 'Online', offline: 'Offline', loading: 'Checking…' };
+
+function setStatusEl(statusEl, status) {
+	if (!statusEl) return;
+	const dot  = statusEl.querySelector('.status-dot');
+	const text = statusEl.querySelector('.status-text');
+	statusEl.className = `service-status ${status}`;
+	if (dot)  dot.className = `status-dot ${status}`;
+	if (text) text.textContent = STATUS_LABELS[status] ?? '—';
+}
+
 // ── Demo services ─────────────────────────────────────────────────────────────
 // Displayed when services.yaml cannot be loaded, so the dashboard isn't blank.
 
@@ -122,16 +143,32 @@ export async function updateService(svc, statusOverride = null) {
 			}
 		}
 
-		state.statusMap[id] = online ? 'online' : 'offline';
+		const newStatus = online ? 'online' : 'offline';
+		state.statusMap[id] = newStatus;
 
 		// Update status badge only when the state actually changes
 		const statusEl = document.getElementById(`status-${id}`);
-		if (statusEl && (prevStatus !== state.statusMap[id] || prevStatus === 'loading')) {
-			const delayAttr = online ? ' style="animation-delay:5s"' : '';
-			statusEl.className = `service-status ${online ? 'online' : 'offline'}`;
-			statusEl.innerHTML =
-				`<span class="status-dot ${online ? 'online' : 'offline'}"></span>` +
-				`<span class="status-text"${delayAttr}>${online ? 'Online' : 'Offline'}</span>`;
+		if (statusEl && (prevStatus !== newStatus || prevStatus === 'loading')) {
+			// Cancel any pending recovery transition for this service
+			clearTimeout(recoveringTimers[id]);
+			delete recoveringTimers[id];
+
+			if (prevStatus === 'offline' && newStatus === 'online') {
+				// Offline → loading → online: hold loading state for at least 2s
+				// so the user sees the intermediate step before turning green.
+				state.statusMap[id] = 'loading';
+				setStatusEl(statusEl, 'loading');
+				recoveringTimers[id] = setTimeout(() => {
+					delete recoveringTimers[id];
+					if (state.statusMap[id] === 'loading') {
+						state.statusMap[id] = 'online';
+						setStatusEl(statusEl, 'online');
+						updateCounters();
+					}
+				}, 2000);
+			} else {
+				setStatusEl(statusEl, newStatus);
+			}
 		}
 
 		if (online && svc.api_type && API_HANDLERS[svc.api_type]) {
