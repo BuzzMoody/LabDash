@@ -1028,6 +1028,7 @@ html {
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 .status-dot.online  { background: var(--online);  animation: pulse-green 2.5s ease-out infinite; }
 .status-dot.offline { background: var(--offline); }
