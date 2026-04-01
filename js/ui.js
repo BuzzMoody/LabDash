@@ -80,12 +80,12 @@ export function initFilters() {
 // ── View toggle (grouped / list) ──────────────────────────────────────────────
 
 export function initViewToggle() {
-	document.querySelectorAll('.view-btn').forEach(btn => {
+	document.querySelectorAll('.view-btn[data-view]').forEach(btn => {
 		btn.classList.toggle('active', btn.dataset.view === state.dashView);
 		btn.addEventListener('click', () => {
 			state.dashView = btn.dataset.view;
 			localStorage.setItem('dashView', state.dashView);
-			document.querySelectorAll('.view-btn').forEach(b =>
+			document.querySelectorAll('.view-btn[data-view]').forEach(b =>
 				b.classList.toggle('active', b.dataset.view === state.dashView)
 			);
 			renderServices();
