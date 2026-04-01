@@ -93,6 +93,22 @@ export function initViewToggle() {
 	});
 }
 
+// ── Sort toggle (alphabetical) ────────────────────────────────────────────────
+
+export function initSortToggle() {
+	const btn = document.getElementById('sort-alpha-btn');
+	if (!btn) return;
+	btn.classList.toggle('active', state.sortAlpha);
+	btn.setAttribute('aria-pressed', state.sortAlpha);
+	btn.addEventListener('click', () => {
+		state.sortAlpha = !state.sortAlpha;
+		localStorage.setItem('sortAlpha', state.sortAlpha);
+		btn.classList.toggle('active', state.sortAlpha);
+		btn.setAttribute('aria-pressed', state.sortAlpha);
+		renderServices();
+	});
+}
+
 // ── Sidebar toggle (mobile) ───────────────────────────────────────────────────
 
 export function initSidebarToggle() {
