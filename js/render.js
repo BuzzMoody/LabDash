@@ -120,6 +120,11 @@ export function renderServices() {
 		);
 	}
 
+	if (state.sortAlpha) {
+		const dir = state.sortAlpha === 'desc' ? -1 : 1;
+		filtered = [...filtered].sort((a, b) => dir * a.name.localeCompare(b.name));
+	}
+
 	if (filtered.length === 0) {
 		grid.innerHTML = '';
 		grid.classList.remove('view-grouped');

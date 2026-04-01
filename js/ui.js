@@ -80,16 +80,38 @@ export function initFilters() {
 // ── View toggle (grouped / list) ──────────────────────────────────────────────
 
 export function initViewToggle() {
-	document.querySelectorAll('.view-btn').forEach(btn => {
+	document.querySelectorAll('.view-btn[data-view]').forEach(btn => {
 		btn.classList.toggle('active', btn.dataset.view === state.dashView);
 		btn.addEventListener('click', () => {
 			state.dashView = btn.dataset.view;
 			localStorage.setItem('dashView', state.dashView);
-			document.querySelectorAll('.view-btn').forEach(b =>
+			document.querySelectorAll('.view-btn[data-view]').forEach(b =>
 				b.classList.toggle('active', b.dataset.view === state.dashView)
 			);
 			renderServices();
 		});
+	});
+}
+
+// ── Sort toggle (alphabetical) ────────────────────────────────────────────────
+
+function applySortToggleState(btn) {
+	btn.classList.toggle('active',    state.sortAlpha !== null);
+	btn.classList.toggle('sort-desc', state.sortAlpha === 'desc');
+	btn.title = state.sortAlpha === 'desc' ? 'Sort Z–A' : 'Sort A–Z';
+}
+
+export function initSortToggle() {
+	const btn = document.getElementById('sort-alpha-btn');
+	if (!btn) return;
+	applySortToggleState(btn);
+	btn.addEventListener('click', () => {
+		if      (state.sortAlpha === null)  state.sortAlpha = 'asc';
+		else if (state.sortAlpha === 'asc') state.sortAlpha = 'desc';
+		else                                state.sortAlpha = null;
+		localStorage.setItem('sortAlpha', state.sortAlpha ?? '');
+		applySortToggleState(btn);
+		renderServices();
 	});
 }
 
