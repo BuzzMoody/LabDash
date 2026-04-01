@@ -11,7 +11,7 @@ export const state = {
 	searchQuery:     '',
 	statusFilter:    null,
 	dashView:        localStorage.getItem('dashView') ?? 'grouped',
-	sortAlpha:       localStorage.getItem('sortAlpha') === 'true',
+	sortAlpha:       localStorage.getItem('sortAlpha') || null,  // null | 'asc' | 'desc'
 	statusMap:       {},     // svcId → 'loading' | 'online' | 'offline'
 	statsMap:        {},     // svcId → stat chip array
 	svcTimers:       {},     // svcId → setInterval handle

@@ -95,16 +95,22 @@ export function initViewToggle() {
 
 // ── Sort toggle (alphabetical) ────────────────────────────────────────────────
 
+function applySortToggleState(btn) {
+	btn.classList.toggle('active',    state.sortAlpha !== null);
+	btn.classList.toggle('sort-desc', state.sortAlpha === 'desc');
+	btn.title = state.sortAlpha === 'desc' ? 'Sort Z–A' : 'Sort A–Z';
+}
+
 export function initSortToggle() {
 	const btn = document.getElementById('sort-alpha-btn');
 	if (!btn) return;
-	btn.classList.toggle('active', state.sortAlpha);
-	btn.setAttribute('aria-pressed', state.sortAlpha);
+	applySortToggleState(btn);
 	btn.addEventListener('click', () => {
-		state.sortAlpha = !state.sortAlpha;
-		localStorage.setItem('sortAlpha', state.sortAlpha);
-		btn.classList.toggle('active', state.sortAlpha);
-		btn.setAttribute('aria-pressed', state.sortAlpha);
+		if      (state.sortAlpha === null)  state.sortAlpha = 'asc';
+		else if (state.sortAlpha === 'asc') state.sortAlpha = 'desc';
+		else                                state.sortAlpha = null;
+		localStorage.setItem('sortAlpha', state.sortAlpha ?? '');
+		applySortToggleState(btn);
 		renderServices();
 	});
 }

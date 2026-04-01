@@ -761,6 +761,7 @@ html {
 .view-btn:hover { color: var(--text-2); }
 .view-btn.active { background: var(--surface-hi); color: var(--text-1); }
 .view-toggle-sep { width: 1px; height: 16px; background: var(--border); margin: 0 0.1rem; flex-shrink: 0; }
+#sort-alpha-btn.sort-desc svg { transform: scaleY(-1); }
 
 /* ── Loading Overlay ────────────────────────────────────────────────────────── */
 #loading-overlay {

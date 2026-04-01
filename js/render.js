@@ -121,7 +121,8 @@ export function renderServices() {
 	}
 
 	if (state.sortAlpha) {
-		filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+		const dir = state.sortAlpha === 'desc' ? -1 : 1;
+		filtered = [...filtered].sort((a, b) => dir * a.name.localeCompare(b.name));
 	}
 
 	if (filtered.length === 0) {
