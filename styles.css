@@ -684,6 +684,11 @@ html {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.topbar-heading.heading-fade-out {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .topbar-stats {
