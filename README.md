@@ -19,6 +19,7 @@ A clean, fast, self-hosted homelab dashboard. Monitor all your services at a gla
 - **Scrollable stat chips** — stats sit on a single draggable/swipeable row at the bottom of each card
 - **Flat or grouped view** — toggle between a single grid or sections grouped by category
 - **Custom logos** — drop your own SVG/PNG logos into `config/logos/`
+- **Custom CSS** — drop a `custom.css` into `config/` to override any built-in styles without touching the source
 - **Icons-only mode** — hide service names and show only icons for a compact layout
 - **Hide descriptions** — strip description text from all cards for a cleaner look
 - **Docker-first** — single container, one config file, done
@@ -578,6 +579,45 @@ Both `.svg` and `.png` are supported. If `logo:` is not set, the `icon:` emoji i
 
 ---
 
+## Custom CSS
+
+You can override any built-in style by placing a `custom.css` file in your config directory:
+
+```
+config/
+├── services.yaml
+├── custom.css        ← add this
+└── logos/
+    └── ...
+```
+
+LabDash loads `styles.css` first (the built-in stylesheet), then `custom.css` immediately after. Because of CSS cascade order, any rule in `custom.css` that targets the same selector will take priority — no `!important` needed in most cases.
+
+**No restart required.** The server checks for the file on every page load, so you can add, edit, or remove `custom.css` and just refresh your browser to see the result.
+
+### Example
+
+```css
+/* Change the dashboard background */
+body {
+  background: #0f0f0f;
+}
+
+/* Make card titles larger */
+.service-name {
+  font-size: 1rem;
+}
+
+/* Adjust the sidebar width */
+#sidebar {
+  width: 220px;
+}
+```
+
+If `custom.css` does not exist, LabDash falls back to the built-in styles with no errors.
+
+---
+
 ## Security
 
 - LabDash is intended for **local network use only**
@@ -608,6 +648,7 @@ LabDash/
 │   └── updates.js         # Update checker and changelog modal
 ├── config/                # Mounted volume — your config lives here
 │   ├── services.yaml      # Your service definitions
+│   ├── custom.css         # Optional — overrides built-in styles
 │   └── logos/             # Your custom logo images
 ├── app.js                 # Entry point — wires up all modules
 ├── styles.css             # All styles

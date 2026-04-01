@@ -33,10 +33,11 @@ var changelogFile []byte
 // ── Types & globals ───────────────────────────────────────────────────────────
 
 type pageData struct {
-	YAMLContent template.JS
-	Changelog   template.JS
-	Version     string
-	AssetVer    string
+	YAMLContent  template.JS
+	Changelog    template.JS
+	Version      string
+	AssetVer     string
+	HasCustomCSS bool
 }
 
 type cachedPing struct {
@@ -84,7 +85,12 @@ func main() {
 
 	mux.HandleFunc("GET /ping",       handlePing)
 	mux.HandleFunc("GET /batch-ping", handleBatchPing)
-	mux.Handle("GET /logos/",         cacheMiddleware(http.StripPrefix("/logos/", http.FileServer(http.Dir("/config/logos")))))
+	mux.Handle("GET /logos/",      cacheMiddleware(http.StripPrefix("/logos/", http.FileServer(http.Dir("/config/logos")))))
+	mux.HandleFunc("GET /custom.css", func(w http.ResponseWriter, r *http.Request) {
+		cacheMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, "/config/custom.css")
+		})).ServeHTTP(w, r)
+	})
 
 	staticHandler := http.FileServer(http.FS(assets))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -149,6 +155,9 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	yamlJSON,      _ := json.Marshal(string(yaml))
 	changelogJSON, _ := json.Marshal(string(changelogFile))
 
+	_, statErr := os.Stat("/config/custom.css")
+	hasCustomCSS := statErr == nil
+
 	assetVer := version
 	if isBeta {
 		// New deploy = new binary = new timestamp = cache busted automatically
@@ -163,10 +172,11 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	tmpl.Execute(w, pageData{ //nolint:errcheck
-		YAMLContent: template.JS(yamlJSON),
-		Changelog:   template.JS(changelogJSON),
-		Version:     version,
-		AssetVer:    assetVer,
+		YAMLContent:  template.JS(yamlJSON),
+		Changelog:    template.JS(changelogJSON),
+		Version:      version,
+		AssetVer:     assetVer,
+		HasCustomCSS: hasCustomCSS,
 	})
 }
 
