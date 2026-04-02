@@ -4,7 +4,7 @@ A clean, fast, self-hosted homelab dashboard. Monitor all your services at a gla
 
 ![LabDash Preview](labdash-preview.png)
 
-> **Security notice:** LabDash is designed for use on your **internal/local network only**. The `services.yaml` configuration file contains API keys, usernames, and passwords in plain text. Do not expose this dashboard to the public internet.
+> **Security notice:** LabDash is designed for use on your **internal/local network only**. API credentials are stored in `services.yaml` and used only by the Go server to proxy requests — they are never sent to the browser or exposed through the dashboard. There is no built-in authentication on the dashboard itself, so do not expose it to the public internet.
 
 ---
 
@@ -151,32 +151,7 @@ Any category name you use that isn't in the list above will display in slate gre
 
 ## Filtering & Views
 
-### Sidebar — Category Filter
-
-Click any category in the left sidebar to show only services in that group. Click **All Services** to return to the full view.
-
-### Search
-
-Type in the search bar (top of the sidebar) to filter services by name, category, or description. The filter is applied in real time.
-
-### Status Pills
-
-The topbar shows three clickable pills:
-
-- **Online** — click to show only services currently reachable
-- **Offline** — click to show only services that failed their status check
-- **Total** — click to clear the status filter
-
-Clicking an active pill a second time clears that filter.
-
-### Flat vs Grouped View
-
-The two icons in the top-right of the topbar toggle between:
-
-- **Grouped** *(default)* — services separated into category sections with colour-coded headings
-- **Flat** — all services in a single grid regardless of category
-
-Your preference is saved in `localStorage` and persists across page loads.
+Use the **search bar** to filter by name, category, or description in real time. Click any **category** in the sidebar to show only that group, or **All Services** to reset. The **Online / Offline / Total** pills in the topbar filter by current status — click an active pill again to clear it. The two icons top-right toggle between **Grouped** (default, by category) and **Flat** (single grid) views; your preference is saved in `localStorage`.
 
 ---
 
@@ -184,290 +159,58 @@ Your preference is saved in `localStorage` and persists across page loads.
 
 Services with an `api_type` display live data chips at the bottom of their card. Stats are fetched on the same schedule as the status check (or their own `refresh:` interval if set).
 
-### Controlling which stats appear
-
 The `args:` field is a comma-separated list of stat keys. Only the keys you list will appear on the card. **If `args:` is omitted, no stats are shown at all.**
 
-```yaml
-args: "movies, series"        # show two chips
-args: "cpu, ram, swap, load"  # show four chips
-args: "version"               # show one chip
-```
+Stats appear in the order you list them on a horizontally scrollable row — drag or swipe to see more if they overflow the card width.
 
-Stats appear in the order you list them and are displayed on a horizontally scrollable row — you can drag or swipe to see more if they overflow the card width.
+When `emoji_stats: true` is set (globally in `settings:` or on an individual service), stat chips display an emoji instead of a text label. Hovering over a chip shows the original label as a tooltip. Per-service `emoji_stats` takes precedence over the global setting.
 
-### Emoji stat chips
+### Supported services
 
-When `emoji_stats: true` is set (globally in `settings:` or on an individual service), stat chips display an emoji instead of a text label. Hovering over a chip shows the original label as a tooltip.
+| Service | `api_type` | Auth | Available `args` |
+|---|---|---|---|
+| Jellyfin | `jellyfin` | `api_key` | `movies`, `series`, `episodes` |
+| Emby | `emby` | `api_key` | `movies`, `series`, `episodes` |
+| Sonarr | `sonarr` | `api_key` | `series`, `monitored` |
+| Radarr | `radarr` | `api_key` | `movies`, `downloaded` |
+| qBittorrent | `qbittorrent` | none | `active`, `dl`, `ul` |
+| Immich | `immich` | `api_key` | `photos`, `videos`, `usage` |
+| Proxmox VE | `proxmox` | `api_key` ¹ | `vms`, `lxcs` |
+| Portainer | `portainer` | `api_key` | `endpoints`, `running`, `stacks` |
+| Glances | `glances` | none | `cpu`, `ram`, `swap`, `load` |
+| Grafana | `grafana` | `api_key` | `dashboards`, `sources` |
+| Pi-hole v6 | `pihole` | `api_key` ² | `total`, `blocked`, `percent_blocked`, `frequency` |
+| AdGuard Home | `adguard` | `api_key` ³ | `blocked`, `queries` |
+| Nextcloud | `nextcloud` | `api_key` ⁴ | `files`, `users`, `php` |
+| Home Assistant | `homeassistant` | `api_key` | `entities`, `active` |
+| Vaultwarden | `vaultwarden` | none | `version` |
+| Nginx Proxy Manager | `nginxproxymanager` | `username` + `password` | `proxy`, `redirection`, `stream`, `dead`, `certs`, `version` |
+| Dispatcharr | `dispatcharr` | `username` + `password` | `channels` |
+| Speedtest Tracker | `speedtesttracker` | `api_key` (optional) | `ping`, `download`, `upload` |
 
-```yaml
-# Global — all services use emoji chips
-settings:
-  emoji_stats: true
-
-# Per-service — only this service uses emoji chips
-- name: Proxmox VE
-  emoji_stats: true
-  ...
-```
-
-Per-service `emoji_stats` takes precedence over the global setting.
-
-### Per-service refresh rate
-
-By default every service refreshes on the global `refresh_interval`. You can override this per service with the `refresh:` field (in seconds):
-
-```yaml
-refresh: 5     # update every 5 seconds (e.g. Glances, qBittorrent)
-refresh: 300   # update every 5 minutes (e.g. Immich, Jellyfin)
-refresh: 3600  # update once an hour
-```
-
----
-
-## Supported Live Services
-
-### Jellyfin
-```yaml
-api_type: jellyfin
-api_key: "your-api-key"
-```
-| Arg | Description |
-|---|---|
-| `movies` | Total movie count |
-| `series` | Total series count |
-| `episodes` | Total episode count |
-
----
-
-### Emby
-```yaml
-api_type: emby
-api_key: "your-api-key"
-```
-| Arg | Description |
-|---|---|
-| `movies` | Total movie count |
-| `series` | Total series count |
-| `episodes` | Total episode count |
-
----
-
-### Sonarr
-```yaml
-api_type: sonarr
-api_key: "your-api-key"
-```
-| Arg | Description |
-|---|---|
-| `series` | Total series count |
-| `monitored` | Number of monitored series |
-
----
-
-### Radarr
-```yaml
-api_type: radarr
-api_key: "your-api-key"
-```
-| Arg | Description |
-|---|---|
-| `movies` | Total movie count |
-| `downloaded` | Number of movies with a file on disk |
-
----
-
-### qBittorrent
-```yaml
-api_type: qbittorrent
-# No api_key required — uses session cookie auth
-```
-| Arg | Description |
-|---|---|
-| `active` | Number of active torrents |
-| `dl` | Current download speed |
-| `ul` | Current upload speed |
-
----
-
-### Immich
-```yaml
-api_type: immich
-api_key: "your-api-key"
-```
-| Arg | Description |
-|---|---|
-| `photos` | Total photo count |
-| `videos` | Total video count |
-| `usage` | Total storage used (auto-scaled, e.g. `54.7 GB`) |
-
----
-
-### Proxmox VE
-```yaml
-api_type: proxmox
-api_key: "PVEAPIToken=user@pam!token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-```
-| Arg | Description |
-|---|---|
-| `vms` | Running/total QEMU virtual machines |
-| `lxcs` | Running/total LXC containers |
-
----
-
-### Portainer
-```yaml
-api_type: portainer
-api_key: "your-portainer-api-key"
-```
-| Arg | Description |
-|---|---|
-| `endpoints` | Total number of endpoints |
-| `running` | Running/total containers across all endpoints |
-| `stacks` | Total stack count |
-
----
-
-### Glances
-```yaml
-api_type: glances
-# No api_key required
-refresh: 5   # recommended — Glances data changes fast
-```
-| Arg | Description |
-|---|---|
-| `cpu` | CPU usage percentage |
-| `ram` | RAM usage percentage |
-| `swap` | Swap usage percentage |
-| `load` | System load average |
-
----
-
-### Grafana
-```yaml
-api_type: grafana
-api_key: "your-service-account-token"
-```
-| Arg | Description |
-|---|---|
-| `dashboards` | Total dashboard count |
-| `sources` | Total data source count |
-
----
-
-### Pi-hole *(v6)*
-```yaml
-api_type: pihole
-api_key: "your-app-password"
-```
-| Arg | Description |
-|---|---|
-| `total` | Total DNS queries today |
-| `blocked` | Total blocked queries today |
-| `percent_blocked` | Percentage of queries blocked |
-| `frequency` | Query rate (queries/second) |
-
-> Pi-hole v6 uses App Passwords. Generate one in the Pi-hole web UI under **Settings → API**.
-
----
-
-### AdGuard Home
-```yaml
-api_type: adguard
-api_key: "username:password"
-```
-| Arg | Description |
-|---|---|
-| `blocked` | Percentage of queries blocked |
-| `queries` | Total DNS queries today |
-
----
-
-### Nextcloud
-```yaml
-api_type: nextcloud
-api_key: "username:app-password"
-```
-| Arg | Description |
-|---|---|
-| `files` | Total file count |
-| `users` | Total user count |
-| `php` | PHP version running on the server |
-
----
-
-### Home Assistant
-```yaml
-api_type: homeassistant
-api_key: "your-long-lived-access-token"
-```
-| Arg | Description |
-|---|---|
-| `entities` | Total entity count |
-| `active` | Number of entities with state `on` |
-
----
-
-### Vaultwarden
-```yaml
-api_type: vaultwarden
-# No api_key required
-```
-| Arg | Description |
-|---|---|
-| `version` | Current Vaultwarden version |
-
----
-
-### Nginx Proxy Manager
-```yaml
-api_type: nginxproxymanager
-username: "your-email@example.com"
-password: "your-password"
-```
-| Arg | Description |
-|---|---|
-| `proxy` | Number of proxy hosts |
-| `redirection` | Number of redirection hosts |
-| `stream` | Number of stream hosts |
-| `dead` | Number of dead/disabled hosts |
-| `certs` | Total SSL certificate count |
-| `version` | Current NPM version (appends `↑` if an update is available) |
-
----
-
-### Dispatcharr
-```yaml
-api_type: dispatcharr
-username: "your-username"
-password: "your-password"
-```
-| Arg | Description |
-|---|---|
-| `channels` | Total IPTV channel count |
-
----
-
-### Speedtest Tracker
-```yaml
-api_type: speedtesttracker
-api_key: "your-api-key"   # optional
-```
-| Arg | Description |
-|---|---|
-| `ping` | Ping from the most recent test (ms) |
-| `download` | Download speed from the most recent test (Mbps) |
-| `upload` | Upload speed from the most recent test (Mbps) |
-
-> Returns no stats if the most recent test is marked as failed.
+> ¹ Proxmox `api_key` format: `PVEAPIToken=user@pam!token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+> ² Pi-hole: generate an App Password in the Pi-hole web UI under **Settings → API**
+> ³ AdGuard `api_key` format: `username:password`
+> ⁴ Nextcloud `api_key` format: `username:app-password`
 
 ---
 
 ## Adding Your Own API Manager
 
-LabDash is designed so that adding support for a new service only requires creating a single file. No other files need to be modified.
+Adding support for a new service requires two things: registering an auth method in Go (if the service needs credentials), and creating a JS handler that fetches and formats the stats.
 
-### 1. Create the handler file
+### 1. Add auth to Go (if needed)
+
+API requests are proxied through the Go server, which attaches credentials before forwarding. If your service uses a standard auth method already covered (Bearer token, API key header, Basic auth), add a `case` for your `api_type` to the `addAuth()` function in `main.go`:
+
+```go
+case "myservice":
+    req.Header.Set("Authorization", "Bearer "+svc.APIKey)
+```
+
+If your service uses a login flow (username+password → session token), add a `login*` function and wire it into `handleProxy()`, following the pattern used by Dispatcharr or Nginx Proxy Manager.
+
+### 2. Create the handler file
 
 Add a new file to `api-managers/` named after your service (lowercase, no spaces):
 
@@ -475,23 +218,23 @@ Add a new file to `api-managers/` named after your service (lowercase, no spaces
 api-managers/myservice.js
 ```
 
-### 2. Write the handler function
+### 3. Write the handler function
 
 The function must be a named export following the pattern `api_<name>`. It receives three arguments:
 
-- `svc` — the full service object from `services.yaml` (gives you access to `svc.url`, `svc.api_key`, `svc.args`, etc.)
-- `timedFetch` — a pre-configured `fetch` wrapper that applies a timeout. Use this instead of `fetch` directly.
+- `svc` — the service object from `services.yaml`. Contains `svc.name`, `svc.args`, etc. Credentials (`api_key`, `username`, `password`) are stripped before the config reaches the browser and are handled server-side.
+- `timedFetch` — a `fetch` wrapper with a built-in timeout. Use this instead of `fetch` directly.
 - `utils` — helper functions: `utils.fmtNum(n)` (locale-formatted number) and `utils.fmtBytes(b)` (auto-scaled bytes string)
 
-The function must return an array of stat objects, or `null` if the fetch fails.
-
-Each stat object has:
+The function must return an array of stat objects, or `null` if the fetch fails. Each stat object has:
 
 | Field | Required | Description |
 |---|---|---|
-| `label` | Yes | The text label shown on the chip (also used as the tooltip when `emoji_stats` is on) |
-| `value` | Yes | The value shown on the chip — always convert to a string or number |
+| `label` | Yes | Text shown on the chip (also the tooltip when `emoji_stats` is on) |
+| `value` | Yes | Value shown on the chip |
 | `emoji` | No | Emoji shown instead of the label when `emoji_stats` is enabled |
+
+Call the proxy endpoint to make authenticated requests — do not fetch the service URL directly:
 
 ```js
 export async function api_myservice(svc, timedFetch, utils) {
@@ -499,16 +242,14 @@ export async function api_myservice(svc, timedFetch, utils) {
     if (!args.length) return null;
 
     try {
-        const base    = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-        const headers = svc.api_key ? { 'Authorization': `Bearer ${svc.api_key}` } : {};
-        const res     = await timedFetch(`${base}/api/stats`, { headers });
+        const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/stats')}`);
         if (!res.ok) return null;
 
         const data = await res.json();
 
         const available = {
-            users:  () => ({ label: 'Users',  value: utils.fmtNum(data.userCount),  emoji: '👤' }),
-            uptime: () => ({ label: 'Uptime', value: `${data.uptimeDays}d`,          emoji: '⏱️' }),
+            users:  () => ({ label: 'Users',  value: utils.fmtNum(data.userCount), emoji: '👤' }),
+            uptime: () => ({ label: 'Uptime', value: `${data.uptimeDays}d`,         emoji: '⏱️' }),
         };
 
         return args.map(a => available[a]?.()).filter(Boolean);
@@ -516,7 +257,7 @@ export async function api_myservice(svc, timedFetch, utils) {
 }
 ```
 
-### 3. Register the handler
+### 4. Register the handler
 
 Open `api-managers/index.js` and add your handler to the imports and the `API_HANDLERS` map:
 
@@ -529,7 +270,7 @@ export const API_HANDLERS = {
 };
 ```
 
-### 4. Use it in services.yaml
+### 5. Use it in services.yaml
 
 ```yaml
 - name: My Service
@@ -540,7 +281,7 @@ export const API_HANDLERS = {
   args: "users, uptime"
 ```
 
-That's it — no changes needed anywhere else. The `emoji_stats` feature works automatically for any stat that includes an `emoji` field.
+That's it. The `emoji_stats` feature works automatically for any stat that includes an `emoji` field.
 
 ---
 
@@ -621,8 +362,9 @@ If `custom.css` does not exist, LabDash falls back to the built-in styles with n
 ## Security
 
 - LabDash is intended for **local network use only**
-- `services.yaml` stores API keys, usernames, and passwords **in plain text** — keep this file private and do not expose it or the dashboard to the internet
-- Some integrations (Nginx Proxy Manager, Dispatcharr, Pi-hole v6) exchange credentials for a session token on each restart; the token is cached in memory only and never written to disk
+- `services.yaml` stores API keys, usernames, and passwords in plain text — keep this file private
+- Credentials are used exclusively by the Go server to proxy API requests and are **never sent to the browser**
+- Services using login-based auth (Nginx Proxy Manager, Dispatcharr, Pi-hole v6) have their session tokens cached in memory only — never written to disk
 - There is no built-in authentication on the dashboard itself — if you need to access it remotely, place it behind a VPN or an authenticated reverse proxy
 
 ---
@@ -631,11 +373,8 @@ If `custom.css` does not exist, LabDash falls back to the built-in styles with n
 
 ```
 LabDash/
-├── api-managers/          # One file per supported service integration
-│   ├── index.js           # Registers all API handlers
-│   ├── jellyfin.js
-│   ├── proxmox.js
-│   └── ...
+├── api-managers/          # One JS file per supported service integration (18 total)
+│   └── index.js           # Registers all API handlers
 ├── js/                    # Frontend ES modules
 │   ├── config.js          # Global config constants
 │   ├── state.js           # Shared runtime state
@@ -653,7 +392,7 @@ LabDash/
 ├── app.js                 # Entry point — wires up all modules
 ├── styles.css             # All styles
 ├── index.html             # Dashboard shell and template
-├── main.go                # Go HTTP server — serves assets and proxies status checks
+├── main.go                # Go HTTP server — serves assets, proxies status checks and API calls
 ├── docker-compose.yml
 └── VERSION                # Current version number
 ```
