@@ -3,15 +3,13 @@ export async function api_homeassistant(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const headers = svc.api_key ? { 'Authorization': `Bearer ${svc.api_key}` } : {};
-		const res     = await timedFetch(`${b}/api/states`, { headers });
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/states')}`);
 		if (!res.ok) return null;
 		const states = await res.json();
 
 		const available = {
-			entities: () => ({ label: 'Entities', value: states.length,                                emoji: '🏠' }),
-			active:   () => ({ label: 'Active',   value: states.filter(s => s.state === 'on').length,  emoji: '✅' }),
+			entities: () => ({ label: 'Entities', value: states.length,                               emoji: '🏠' }),
+			active:   () => ({ label: 'Active',   value: states.filter(s => s.state === 'on').length, emoji: '✅' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

@@ -3,10 +3,7 @@ export async function api_portainer(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const headers = svc.api_key ? { 'x-api-key': svc.api_key } : {};
-
-		const res = await timedFetch(`${b}/api/endpoints`, { headers });
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/endpoints')}`);
 		if (!res.ok) return null;
 		const eps = await res.json();
 

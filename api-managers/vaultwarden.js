@@ -3,8 +3,7 @@ export async function api_vaultwarden(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b   = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const res = await timedFetch(`${b}/api/version`);
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/version')}`);
 		if (!res.ok) return null;
 
 		const version = await res.json();

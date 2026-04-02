@@ -3,10 +3,10 @@ export async function api_qbittorrent(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
+		const proxy = path => timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent(path)}`);
 		const [tr, to] = await Promise.all([
-			timedFetch(`${b}/api/v2/transfer/info`),
-			timedFetch(`${b}/api/v2/torrents/info`),
+			proxy('/api/v2/transfer/info'),
+			proxy('/api/v2/torrents/info'),
 		]);
 		if (!tr.ok || !to.ok) return null;
 		const transfer = await tr.json();
@@ -21,7 +21,7 @@ export async function api_qbittorrent(svc, timedFetch) {
 		};
 
 		const available = {
-			active: () => ({ label: 'Active', value: active.length,                        emoji: '📥' }),
+			active: () => ({ label: 'Active', value: active.length,                         emoji: '📥' }),
 			dl:     () => ({ label: 'DL',     value: fmtSpeed(transfer.dl_info_speed ?? 0), emoji: '⬇️' }),
 			ul:     () => ({ label: 'UL',     value: fmtSpeed(transfer.up_info_speed ?? 0), emoji: '⬆️' }),
 		};

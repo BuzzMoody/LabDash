@@ -3,10 +3,7 @@ export async function api_emby(svc, timedFetch, utils) {
 	if (!args.length) return null;
 
 	try {
-		const b         = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const authQuery = svc.api_key ? `?api_key=${svc.api_key}` : '';
-
-		const res = await timedFetch(`${b}/Items/Counts${authQuery}`);
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/Items/Counts')}`);
 		if (!res.ok) return null;
 		const data = await res.json();
 

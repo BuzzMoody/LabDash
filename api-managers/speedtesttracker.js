@@ -3,9 +3,7 @@ export async function api_speedtesttracker(svc, timedFetch, utils) {
 	if (!args.length) return null;
 
 	try {
-		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const headers = svc.api_key ? { 'Authorization': `Bearer ${svc.api_key}` } : {};
-		const res     = await timedFetch(`${b}/api/speedtest/latest`, { headers });
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/speedtest/latest')}`);
 		if (!res.ok) return null;
 
 		const { data } = await res.json();
@@ -13,8 +11,8 @@ export async function api_speedtesttracker(svc, timedFetch, utils) {
 
 		const available = {
 			ping:     () => ({ label: 'Ping', value: `${parseFloat(data.ping).toFixed(1)} ms`,      emoji: '🏓' }),
-			download: () => ({ label: 'DL', value: `${parseFloat(data.download).toFixed(1)} Mbps`, emoji: '⬇️' }),
-			upload:   () => ({ label: 'UL', value: `${parseFloat(data.upload).toFixed(1)} Mbps`,   emoji: '⬆️' }),
+			download: () => ({ label: 'DL',   value: `${parseFloat(data.download).toFixed(1)} Mbps`, emoji: '⬇️' }),
+			upload:   () => ({ label: 'UL',   value: `${parseFloat(data.upload).toFixed(1)} Mbps`,   emoji: '⬆️' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

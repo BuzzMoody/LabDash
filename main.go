@@ -1,19 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ── Embedded assets ───────────────────────────────────────────────────────────
@@ -45,6 +50,25 @@ type cachedPing struct {
 	at     time.Time
 }
 
+// Service mirrors the per-service fields in services.yaml that the proxy needs.
+type Service struct {
+	Name     string `yaml:"name"`
+	URL      string `yaml:"url"`
+	Endpoint string `yaml:"endpoint"`
+	APIType  string `yaml:"api_type"`
+	APIKey   string `yaml:"api_key"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
+type dashConfig struct {
+	Services []Service `yaml:"services"`
+}
+
+// credRe strips credential fields from the YAML string injected into the page,
+// so api_key / username / password never reach the browser.
+var credRe = regexp.MustCompile(`(?m)^\s*(api_key|username|password)\s*:.*$`)
+
 var (
 	version    string
 	isBeta     bool
@@ -52,6 +76,8 @@ var (
 	tmpl       *template.Template
 	client     *http.Client
 	pingCache  sync.Map // map[string]cachedPing
+	piholeCache sync.Map // map[string]string  — service name → Pi-hole SID
+	jwtCache    sync.Map // map[string]string  — service name → Bearer token
 )
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -64,7 +90,7 @@ func main() {
 	tmpl = template.Must(template.New("index").Parse(indexHTML))
 
 	client = &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true}, //nolint:gosec — self-signed certs common in homelabs
 			MaxIdleConns:        50,
@@ -85,6 +111,7 @@ func main() {
 
 	mux.HandleFunc("GET /ping",       handlePing)
 	mux.HandleFunc("GET /batch-ping", handleBatchPing)
+	mux.HandleFunc("GET /proxy",      handleProxy)
 	mux.Handle("GET /logos/",      cacheMiddleware(http.StripPrefix("/logos/", http.FileServer(http.Dir("/config/logos")))))
 	mux.HandleFunc("GET /custom.css", func(w http.ResponseWriter, r *http.Request) {
 		cacheMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -122,25 +149,14 @@ func ensureConfig() {
 }
 
 // ── Cache middleware ──────────────────────────────────────────────────────────
-//
-// Assets are served with a ?v=<version> query param (injected by the Go
-// template). In production we treat those URLs as immutable and tell the
-// browser it can cache them for a year — the URL changes automatically
-// whenever a new release is deployed, busting the cache.
-//
-// Beta keeps everything uncached so changes are visible immediately.
-// Unversioned requests (e.g. logos) get a short 10-minute cache with
-// must-revalidate so they stay fresh without hammering the server.
 
 func cacheMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if isBeta {
 			w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
 		} else if r.URL.Query().Get("v") != "" {
-			// Versioned asset — safe to cache indefinitely
 			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		} else {
-			// Unversioned (logos etc.) — cache for 10 minutes, then revalidate
 			w.Header().Set("Cache-Control", "public, max-age=600, must-revalidate")
 		}
 		next.ServeHTTP(w, r)
@@ -150,9 +166,13 @@ func cacheMiddleware(next http.Handler) http.Handler {
 // ── Dashboard page ────────────────────────────────────────────────────────────
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	yaml, _ := os.ReadFile("/config/services.yaml")
+	raw, _ := os.ReadFile("/config/services.yaml")
 
-	yamlJSON,      _ := json.Marshal(string(yaml))
+	// Strip credentials before injecting into the page — they are only needed
+	// server-side by the /proxy handler.
+	safeYAML := credRe.ReplaceAllString(string(raw), "")
+
+	yamlJSON,      _ := json.Marshal(safeYAML)
 	changelogJSON, _ := json.Marshal(string(changelogFile))
 
 	_, statErr := os.Stat("/config/custom.css")
@@ -160,13 +180,11 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	assetVer := version
 	if isBeta {
-		// New deploy = new binary = new timestamp = cache busted automatically
 		assetVer = fmt.Sprintf("%d", startedAt)
 		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
 		w.Header().Set("Pragma",        "no-cache")
 		w.Header().Set("Expires",       "0")
 	} else {
-		// HTML is tiny and controls asset versioning — always revalidate
 		w.Header().Set("Cache-Control", "no-cache")
 	}
 
@@ -189,7 +207,6 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 5-second in-memory cache shared across all concurrent requests
 	if v, ok := pingCache.Load(rawURL); ok {
 		if e := v.(cachedPing); time.Since(e.at) < 5*time.Second {
 			w.Header().Set("Content-Type", "application/json")
@@ -230,7 +247,332 @@ func handleBatchPing(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(results) //nolint:errcheck
 }
 
+// ── API proxy ─────────────────────────────────────────────────────────────────
+//
+// GET /proxy?svc=<service-name>&path=<url-path-with-optional-query>
+//
+// Resolves the base URL and credentials for the named service from
+// services.yaml, then proxies the request server-side so credentials never
+// reach the browser.
+
+func handleProxy(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	svcName := q.Get("svc")
+	path    := q.Get("path")
+
+	if svcName == "" || path == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	services, err := loadServiceMap()
+	if err != nil {
+		http.Error(w, "config unavailable", http.StatusInternalServerError)
+		return
+	}
+
+	svc, ok := services[svcName]
+	if !ok {
+		http.Error(w, "unknown service", http.StatusNotFound)
+		return
+	}
+
+	base := strings.TrimRight(svc.Endpoint, "/")
+	if base == "" {
+		base = strings.TrimRight(svc.URL, "/")
+	}
+	targetURL := base + path
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	switch svc.APIType {
+	case "pihole":
+		proxyPihole(w, ctx, svc, base, targetURL)
+	case "dispatcharr":
+		proxyJWT(w, ctx, svc, targetURL, loginDispatcharr)
+	case "nginxproxymanager":
+		proxyJWT(w, ctx, svc, targetURL, loginNPM)
+	default:
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+		if err != nil {
+			http.Error(w, "bad target URL", http.StatusBadRequest)
+			return
+		}
+		addAuth(req, svc)
+		proxyResponse(w, req)
+	}
+}
+
+// addAuth attaches credentials to req based on the service's api_type.
+func addAuth(req *http.Request, svc Service) {
+	if svc.APIKey == "" {
+		return
+	}
+	switch svc.APIType {
+	case "jellyfin", "emby":
+		q := req.URL.Query()
+		q.Set("api_key", svc.APIKey)
+		req.URL.RawQuery = q.Encode()
+	case "sonarr", "radarr":
+		req.Header.Set("X-Api-Key", svc.APIKey)
+	case "portainer", "immich":
+		req.Header.Set("x-api-key", svc.APIKey)
+	case "grafana", "homeassistant", "speedtesttracker":
+		req.Header.Set("Authorization", "Bearer "+svc.APIKey)
+	case "proxmox":
+		req.Header.Set("Authorization", "PVEAPIToken="+svc.APIKey)
+	case "adguard":
+		parts := strings.SplitN(svc.APIKey, ":", 2)
+		if len(parts) == 2 {
+			req.SetBasicAuth(parts[0], parts[1])
+		}
+	case "nextcloud":
+		parts := strings.SplitN(svc.APIKey, ":", 2)
+		if len(parts) == 2 {
+			req.SetBasicAuth(parts[0], parts[1])
+		}
+		req.Header.Set("OCS-APIRequest", "true")
+	}
+}
+
+// proxyResponse executes req and writes the upstream response to w.
+func proxyResponse(w http.ResponseWriter, req *http.Request) {
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "upstream error", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	if ct := resp.Header.Get("Content-Type"); ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body) //nolint:errcheck
+}
+
+// ── Multi-step auth: Pi-hole (password → SID) ─────────────────────────────────
+
+func proxyPihole(w http.ResponseWriter, ctx context.Context, svc Service, base, targetURL string) {
+	reqWithSID := func(sid string) (*http.Response, error) {
+		u := targetURL
+		if sid != "" {
+			parsed, err := url.Parse(targetURL)
+			if err != nil {
+				return nil, err
+			}
+			pq := parsed.Query()
+			pq.Set("sid", sid)
+			parsed.RawQuery = pq.Encode()
+			u = parsed.String()
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+		if err != nil {
+			return nil, err
+		}
+		return client.Do(req)
+	}
+
+	// Try cached SID first
+	if v, ok := piholeCache.Load(svc.Name); ok {
+		resp, err := reqWithSID(v.(string))
+		if err == nil && resp.StatusCode != http.StatusUnauthorized {
+			defer resp.Body.Close()
+			proxyWriteResponse(w, resp)
+			return
+		}
+		if resp != nil {
+			resp.Body.Close()
+		}
+		piholeCache.Delete(svc.Name)
+	}
+
+	// No api_key — try unauthenticated (Pi-hole v5 or open instance)
+	if svc.APIKey == "" {
+		resp, err := reqWithSID("")
+		if err != nil {
+			http.Error(w, "upstream error", http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		proxyWriteResponse(w, resp)
+		return
+	}
+
+	// POST to /api/auth to get a new SID
+	body, _ := json.Marshal(map[string]string{"password": svc.APIKey})
+	authReq, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/api/auth", bytes.NewReader(body))
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	authReq.Header.Set("Content-Type", "application/json")
+
+	authResp, err := client.Do(authReq)
+	if err != nil || authResp.StatusCode >= 400 {
+		if authResp != nil {
+			authResp.Body.Close()
+		}
+		http.Error(w, "pihole auth failed", http.StatusUnauthorized)
+		return
+	}
+
+	var authData struct {
+		Session struct {
+			SID string `json:"sid"`
+		} `json:"session"`
+		SID string `json:"sid"` // some versions return sid at top level
+	}
+	json.NewDecoder(authResp.Body).Decode(&authData) //nolint:errcheck
+	authResp.Body.Close()
+
+	sid := authData.Session.SID
+	if sid == "" {
+		sid = authData.SID
+	}
+	if sid == "" {
+		http.Error(w, "pihole auth failed: no SID in response", http.StatusUnauthorized)
+		return
+	}
+	piholeCache.Store(svc.Name, sid)
+
+	resp, err := reqWithSID(sid)
+	if err != nil {
+		http.Error(w, "upstream error", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	proxyWriteResponse(w, resp)
+}
+
+// ── Multi-step auth: JWT (username+password → Bearer token) ──────────────────
+
+type loginFn func(ctx context.Context, svc Service) (string, error)
+
+func proxyJWT(w http.ResponseWriter, ctx context.Context, svc Service, targetURL string, login loginFn) {
+	makeReq := func(token string) (*http.Response, error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+		if err != nil {
+			return nil, err
+		}
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		return client.Do(req)
+	}
+
+	// Try cached token first
+	if v, ok := jwtCache.Load(svc.Name); ok {
+		resp, err := makeReq(v.(string))
+		if err == nil && resp.StatusCode != http.StatusUnauthorized {
+			defer resp.Body.Close()
+			proxyWriteResponse(w, resp)
+			return
+		}
+		if resp != nil {
+			resp.Body.Close()
+		}
+		jwtCache.Delete(svc.Name)
+	}
+
+	// Get a fresh token
+	token, err := login(ctx, svc)
+	if err != nil {
+		http.Error(w, "auth failed", http.StatusUnauthorized)
+		return
+	}
+	jwtCache.Store(svc.Name, token)
+
+	resp, err := makeReq(token)
+	if err != nil {
+		http.Error(w, "upstream error", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	proxyWriteResponse(w, resp)
+}
+
+func loginDispatcharr(ctx context.Context, svc Service) (string, error) {
+	base := strings.TrimRight(svc.Endpoint, "/")
+	if base == "" {
+		base = strings.TrimRight(svc.URL, "/")
+	}
+	body, _ := json.Marshal(map[string]string{"username": svc.Username, "password": svc.Password})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/api/accounts/token/", bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	var data struct {
+		Access string `json:"access"`
+	}
+	json.NewDecoder(resp.Body).Decode(&data) //nolint:errcheck
+	if data.Access == "" {
+		return "", fmt.Errorf("dispatcharr: no access token in response")
+	}
+	return data.Access, nil
+}
+
+func loginNPM(ctx context.Context, svc Service) (string, error) {
+	base := strings.TrimRight(svc.Endpoint, "/")
+	if base == "" {
+		base = strings.TrimRight(svc.URL, "/")
+	}
+	body, _ := json.Marshal(map[string]string{"identity": svc.Username, "secret": svc.Password})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/api/tokens", bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	var data struct {
+		Token string `json:"token"`
+	}
+	json.NewDecoder(resp.Body).Decode(&data) //nolint:errcheck
+	if data.Token == "" {
+		return "", fmt.Errorf("nginxproxymanager: no token in response")
+	}
+	return data.Token, nil
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+func proxyWriteResponse(w http.ResponseWriter, resp *http.Response) {
+	if ct := resp.Header.Get("Content-Type"); ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body) //nolint:errcheck
+}
+
+// loadServiceMap reads services.yaml and returns a map keyed by service name.
+// Called on every proxy request — the file is small so the overhead is minimal.
+func loadServiceMap() (map[string]Service, error) {
+	data, err := os.ReadFile("/config/services.yaml")
+	if err != nil {
+		return nil, err
+	}
+	var cfg dashConfig
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+	m := make(map[string]Service, len(cfg.Services))
+	for _, s := range cfg.Services {
+		if s.Name != "" {
+			m[s.Name] = s
+		}
+	}
+	return m, nil
+}
 
 func validURL(rawURL string) bool {
 	if rawURL == "" {

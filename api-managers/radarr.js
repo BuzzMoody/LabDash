@@ -3,15 +3,13 @@ export async function api_radarr(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const headers = svc.api_key ? { 'X-Api-Key': svc.api_key } : {};
-		const res     = await timedFetch(`${b}/api/v3/movie`, { headers });
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/v3/movie')}`);
 		if (!res.ok) return null;
 		const movies = await res.json();
 
 		const available = {
-			movies:     () => ({ label: 'Movies',     value: movies.length,                          emoji: '🎬' }),
-			downloaded: () => ({ label: 'Downloaded', value: movies.filter(m => m.hasFile).length,   emoji: '✅' }),
+			movies:     () => ({ label: 'Movies',     value: movies.length,                        emoji: '🎬' }),
+			downloaded: () => ({ label: 'Downloaded', value: movies.filter(m => m.hasFile).length, emoji: '✅' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);

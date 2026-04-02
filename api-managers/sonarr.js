@@ -3,15 +3,13 @@ export async function api_sonarr(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const headers = svc.api_key ? { 'X-Api-Key': svc.api_key } : {};
-		const res     = await timedFetch(`${b}/api/v3/series`, { headers });
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/v3/series')}`);
 		if (!res.ok) return null;
 		const series = await res.json();
 
 		const available = {
-			series:    () => ({ label: 'Series',    value: series.length,                              emoji: '📺' }),
-			monitored: () => ({ label: 'Monitored', value: series.filter(s => s.monitored).length,     emoji: '👁️' }),
+			series:    () => ({ label: 'Series',    value: series.length,                          emoji: '📺' }),
+			monitored: () => ({ label: 'Monitored', value: series.filter(s => s.monitored).length, emoji: '👁️' }),
 		};
 
 		return args.map(a => available[a]?.()).filter(Boolean);
