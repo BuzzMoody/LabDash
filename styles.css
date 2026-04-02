@@ -1448,6 +1448,9 @@ body.icons-only-mode .service-status {
 .sb-section {
   border-bottom: 1px solid var(--border);
 }
+.sb-section + .sb-section {
+  margin-top: 0.5rem;
+}
 .sb-section:last-child {
   border-bottom: none;
 }
@@ -1457,7 +1460,7 @@ body.icons-only-mode .service-status {
   align-items: center;
   gap: 0.45rem;
   width: 100%;
-  padding: 0.55rem 0.875rem;
+  padding: 0.55rem 0.875rem 0.75rem;
   color: var(--text-2);
   font-size: 0.72rem;
   font-weight: 600;
@@ -1475,7 +1478,7 @@ body.icons-only-mode .service-status {
 }
 .sb-open > .sb-hdr .sb-caret { transform: rotate(90deg); }
 
-.sb-label { flex: 1; }
+.sb-label {}
 
 /* Grid-row collapse animation */
 .sb-body {
