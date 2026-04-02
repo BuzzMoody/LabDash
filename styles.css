@@ -1461,7 +1461,7 @@ body.icons-only-mode .service-status {
   gap: 0.45rem;
   width: 100%;
   padding: 0.55rem 0.875rem 0.75rem;
-  color: var(--text-2);
+  color: var(--text-1);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1492,7 +1492,6 @@ body.icons-only-mode .service-status {
 }
 .sb-inner {
   overflow: hidden;
-  margin-bottom: 1rem;
 }
 
 /* Suppress transitions during auto-expand measurement */
