@@ -1484,6 +1484,7 @@ body.icons-only-mode .service-status {
 .sb-body {
   display: grid;
   grid-template-rows: 0fr;
+  overflow: hidden;
   transition: grid-template-rows 0.22s ease;
 }
 .sb-open > .sb-body {
