@@ -80,6 +80,41 @@ settings:
 
 All settings are optional. `emoji_stats`, `icons_only`, and `hide_descriptions` default to `false`.
 
+### External Links
+
+Add a collapsible **Links** section to the sidebar with quick shortcuts to any URL:
+
+```yaml
+settings:
+  external_links:
+    - name: Home Router
+      url: "http://192.168.1.1"
+      icon: "🔀"
+    - name: Proxmox
+      url: "https://192.168.1.10:8006"
+      icon: proxmox.svg        # filename from config/logos/
+```
+
+`icon` accepts either an emoji or a logo filename from `config/logos/`. If omitted, a default 🔗 is shown. Links open in a new tab.
+
+### Ping Endpoints
+
+Add a collapsible **Ping** section to the sidebar that shows live ICMP latency for any host:
+
+```yaml
+settings:
+  ping_endpoints:
+    - name: Router
+      destination: 192.168.1.1
+      logo: router.svg         # optional — filename from config/logos/
+    - name: Cloudflare DNS
+      destination: 1.1.1.1
+    - name: Google DNS
+      destination: 8.8.8.8
+```
+
+Latency is polled every 30 seconds and colour-coded: **<10 ms** bright green, **<30 ms** green, **<70 ms** yellow, **<150 ms** orange, **≥150 ms** red. Unreachable hosts show `—`.
+
 ### Service Fields
 
 | Field | Required | Description |
