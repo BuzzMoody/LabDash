@@ -1,8 +1,7 @@
 ## What's Changed
 
-- style: smooth offline → checking → online/offline status transitions (#29) (67dddd8)
-- Add alphabetical sort toggle (off / A–Z / Z–A) (#28) (8f3b254)
-- feat: Add custom.css support for user style overrides (#27) (02c98d2)
+- feat: Sidebar extensions: collapsible sections, external links, ICMP ping (#33) (28836ed)
+- feat: server-side API proxy to keep credentials out of the browser (#31) (4bff5e0)
 
 ---
-**Full Changelog**: https://github.com/BuzzMoody/LabDash/compare/v1.3.1...v1.4.0
+**Full Changelog**: https://github.com/BuzzMoody/LabDash/compare/v1.4.0...v1.5.0
