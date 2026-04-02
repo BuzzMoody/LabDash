@@ -71,9 +71,15 @@ function buildCatContent(services) {
 
 function buildLinksContent(links) {
 	const arrowSVG = `<svg class="link-arrow" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 1h7v7M9 1 1 9"/></svg>`;
+	const iconHTML = icon => {
+		if (!icon) return '🔗';
+		return /\.(svg|png|webp|jpg|jpeg|ico)$/i.test(icon)
+			? `<img src="/logos/${icon}" alt="" loading="lazy" class="link-logo" />`
+			: icon;
+	};
 	return links.map(link => `
 		<a class="link-item" href="${link.url}" target="_blank" rel="noopener noreferrer">
-			<span class="link-icon">${link.icon ?? '🔗'}</span>
+			<span class="link-icon">${iconHTML(link.icon)}</span>
 			<span class="link-label">${link.name}</span>
 			${arrowSVG}
 		</a>
