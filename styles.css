@@ -675,12 +675,20 @@ html {
 .sidebar-toggle:hover { background: var(--surface-hi); color: var(--text-1); }
 
 .topbar-heading {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-1);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  font-family: var(--mono);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.topbar-heading.heading-fade-out {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .topbar-stats {

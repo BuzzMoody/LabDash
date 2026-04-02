@@ -3,10 +3,7 @@ export async function api_proxmox(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const headers = { 'Authorization': `PVEAPIToken=${svc.api_key}` };
-
-		const res = await timedFetch(`${b}/api2/json/cluster/resources`, { headers });
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api2/json/cluster/resources')}`);
 		if (!res.ok) return null;
 
 		const { data } = await res.json();

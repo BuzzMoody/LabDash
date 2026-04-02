@@ -3,11 +3,10 @@ export async function api_grafana(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b       = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const headers = svc.api_key ? { 'Authorization': `Bearer ${svc.api_key}` } : {};
+		const proxy = path => timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent(path)}`);
 		const [dashR, dsR] = await Promise.all([
-			timedFetch(`${b}/api/search?type=dash-db&limit=500`, { headers }),
-			timedFetch(`${b}/api/datasources`, { headers }),
+			proxy('/api/search?type=dash-db&limit=500'),
+			proxy('/api/datasources'),
 		]);
 
 		const [dashboards, sources] = await Promise.all([

@@ -3,8 +3,7 @@ export async function api_glances(svc, timedFetch) {
 	if (!args.length) return null;
 
 	try {
-		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const r = await timedFetch(`${b}/api/4/quicklook`);
+		const r = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/4/quicklook')}`);
 		if (!r.ok) return null;
 		const d = await r.json();
 

@@ -47,11 +47,16 @@ export function buildCategoryNav(services) {
 			updatePillActiveState();
 			nav.querySelectorAll('.cat-item').forEach(b => b.classList.remove('active'));
 			btn.classList.add('active');
-			const heading = document.getElementById('topbar-heading');
+			const heading  = document.getElementById('topbar-heading');
+			const newLabel = state.activeCategory === 'all'
+				? 'All Services'
+				: btn.querySelector('.cat-label').textContent.trim();
 			if (heading) {
-				heading.textContent = state.activeCategory === 'all'
-					? 'All Services'
-					: btn.querySelector('.cat-label').textContent.trim();
+				heading.classList.add('heading-fade-out');
+				setTimeout(() => {
+					heading.textContent = newLabel;
+					heading.classList.remove('heading-fade-out');
+				}, 150);
 			}
 			renderServices();
 		});

@@ -24,9 +24,11 @@ COPY api-managers/ api-managers/
 COPY js/ js/
 
 # Compile — cross-compile to target arch, reuse Go build cache between runs
-RUN --mount=type=cache,target=/root/.cache/go-build \
+# -mod=mod allows fetching dependencies declared in go.mod at build time
+RUN --mount=type=cache,target=/root/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags="-s -w" -o labdash .
+    go build -mod=mod -ldflags="-s -w" -o labdash .
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM alpine:3.21

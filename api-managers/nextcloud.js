@@ -3,12 +3,7 @@ export async function api_nextcloud(svc, timedFetch, utils) {
 	if (!args.length) return null;
 
 	try {
-		const b            = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-		const [user, pass] = (svc.api_key ?? ':').split(':');
-		const res = await timedFetch(
-			`${b}/ocs/v2.php/apps/serverinfo/api/v1/info?format=json`,
-			{ headers: { 'Authorization': `Basic ${btoa(`${user}:${pass}`)}`, 'OCS-APIRequest': 'true' } }
-		);
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/ocs/v2.php/apps/serverinfo/api/v1/info?format=json')}`);
 		if (!res.ok) return null;
 		const d   = await res.json();
 		const nc  = d?.ocs?.data?.nextcloud;

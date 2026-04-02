@@ -3,23 +3,8 @@ export async function api_dispatcharr(svc, timedFetch, utils) {
 	if (!args.length) return null;
 
 	try {
-		const b = (svc.endpoint ?? svc.url).replace(/\/$/, '');
-
-		// 1. Obtain a Bearer token using username + password
-		const authRes = await timedFetch(`${b}/api/accounts/token/`, {
-			method:  'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body:    JSON.stringify({ username: svc.username, password: svc.password }),
-		});
-		if (!authRes.ok) return null;
-
-		const { access } = await authRes.json();
-		if (!access) return null;
-
-		// 2. Fetch channel lineup using the access token
-		const res = await timedFetch(`${b}/api/hdhr/lineup.json`, {
-			headers: { 'Authorization': `Bearer ${access}` },
-		});
+		// Login (username + password → JWT) and token caching are handled server-side by /proxy
+		const res = await timedFetch(`/proxy?svc=${encodeURIComponent(svc.name)}&path=${encodeURIComponent('/api/hdhr/lineup.json')}`);
 		if (!res.ok) return null;
 
 		const channels = await res.json();
