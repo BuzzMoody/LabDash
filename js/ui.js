@@ -6,24 +6,50 @@ import { catColor }              from './utils.js';
 import { renderServices }        from './render.js';
 import { updatePillActiveState } from './counters.js';
 
-// ── Category navigation ───────────────────────────────────────────────────────
-// Builds the sidebar category list from the loaded services array and wires up
-// click handlers to filter the grid.
+// ── Section state ─────────────────────────────────────────────────────────────
+// Each collapsible sidebar section stores its open/closed state in localStorage.
+// Categories default to open, links and ping default to closed (auto-expanded on
+// first visit if vertical space permits).
 
-export function buildCategoryNav(services) {
-	const nav = document.getElementById('cat-nav');
-	if (!nav) return;
+const SECTION_KEY      = 'sbSections';
+const SECTION_DEFAULTS = { categories: true, links: false, ping: false };
 
+function loadSectionState() {
+	try { return { ...SECTION_DEFAULTS, ...JSON.parse(localStorage.getItem(SECTION_KEY) || '{}') }; }
+	catch { return { ...SECTION_DEFAULTS }; }
+}
+
+function saveSectionState(s) {
+	localStorage.setItem(SECTION_KEY, JSON.stringify(s));
+}
+
+// ── Collapsible section HTML helpers ──────────────────────────────────────────
+
+const caretSVG = `<svg class="sb-caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2l4 3-4 3"/></svg>`;
+
+function sectionWrap(name, label, content, isOpen) {
+	return `
+		<div class="sb-section${isOpen ? ' sb-open' : ''}" data-section="${name}">
+			<button class="sb-hdr" aria-expanded="${isOpen}">
+				${caretSVG}
+				<span class="sb-label">${label}</span>
+			</button>
+			<div class="sb-body"><div class="sb-inner">${content}</div></div>
+		</div>
+	`;
+}
+
+// ── Categories ────────────────────────────────────────────────────────────────
+
+function buildCatContent(services) {
 	const counts = { all: services.length };
 	services.forEach(s => {
 		const k = s.category ?? 'Other';
 		counts[k] = (counts[k] ?? 0) + 1;
 	});
-
 	const categories = [...new Set(services.map(s => s.category ?? 'Other'))].sort();
 
-	nav.innerHTML = `
-		<div class="cat-section-label">Categories</div>
+	return `
 		<button class="cat-item ${state.activeCategory === 'all' ? 'active' : ''}" data-cat="all">
 			<span class="cat-dot" style="background: linear-gradient(135deg, #22d3ee, #818cf8)"></span>
 			<span class="cat-label">All Services</span>
@@ -39,7 +65,103 @@ export function buildCategoryNav(services) {
 			</button>
 		`).join('')}
 	`;
+}
 
+// ── External links ────────────────────────────────────────────────────────────
+
+function buildLinksContent(links) {
+	const arrowSVG = `<svg class="link-arrow" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 1h7v7M9 1 1 9"/></svg>`;
+	const iconHTML = icon => {
+		if (!icon) return '🔗';
+		return /\.(svg|png|webp|jpg|jpeg|ico)$/i.test(icon)
+			? `<img src="/logos/${icon}" alt="" loading="lazy" class="link-logo" />`
+			: icon;
+	};
+	return links.map(link => `
+		<a class="link-item" href="${link.url}" target="_blank" rel="noopener noreferrer">
+			<span class="link-icon">${iconHTML(link.icon)}</span>
+			<span class="link-label">${link.name}</span>
+			${arrowSVG}
+		</a>
+	`).join('');
+}
+
+// ── Ping entries ──────────────────────────────────────────────────────────────
+
+function buildPingContent(endpoints) {
+	return endpoints.map(ep => `
+		<div class="ping-entry" data-ping-host="${ep.destination}">
+			${ep.logo
+				? `<img class="ping-logo" src="/logos/${ep.logo}" alt="" loading="lazy" />`
+				: `<span class="ping-logo-ph"></span>`}
+			<span class="ping-name">${ep.name ?? ep.destination}</span>
+			<span class="ping-ms">—</span>
+		</div>
+	`).join('');
+}
+
+// ── Auto-expand on first visit ────────────────────────────────────────────────
+// Temporarily suppresses transitions so we can measure the nav height accurately,
+// then opens as many sections as fit without causing a scroll, bottom-up.
+
+function autoExpandSections(nav, hasLinks, hasPing) {
+	nav.classList.add('sb-no-trans');
+
+	const open  = name => { nav.querySelector(`[data-section="${name}"]`)?.classList.add('sb-open'); };
+	const close = name => { nav.querySelector(`[data-section="${name}"]`)?.classList.remove('sb-open'); };
+
+	if (hasLinks) open('links');
+	if (hasPing)  open('ping');
+
+	requestAnimationFrame(() => {
+		if (nav.scrollHeight > nav.clientHeight) {
+			if (hasPing) close('ping');
+		}
+		requestAnimationFrame(() => {
+			if (nav.scrollHeight > nav.clientHeight) {
+				if (hasLinks) close('links');
+			}
+			nav.classList.remove('sb-no-trans');
+
+			// Sync final open state back to localStorage
+			const s = loadSectionState();
+			s.links = !!nav.querySelector('[data-section="links"]')?.classList.contains('sb-open');
+			s.ping  = !!nav.querySelector('[data-section="ping"]')?.classList.contains('sb-open');
+			saveSectionState(s);
+		});
+	});
+}
+
+// ── Build entire sidebar nav ──────────────────────────────────────────────────
+
+export function buildSidebarSections(services, settings) {
+	const nav = document.getElementById('cat-nav');
+	if (!nav) return;
+
+	const firstVisit = !localStorage.getItem(SECTION_KEY);
+	const sState     = loadSectionState();
+	const links      = settings?.external_links  ?? [];
+	const pings      = settings?.ping_endpoints  ?? [];
+
+	nav.innerHTML = [
+		sectionWrap('categories', 'Categories', buildCatContent(services),   sState.categories),
+		links.length ? sectionWrap('links', 'Links', buildLinksContent(links), sState.links) : '',
+		pings.length ? sectionWrap('ping',  'Ping',  buildPingContent(pings),  sState.ping)  : '',
+	].join('');
+
+	// Wire section toggle buttons
+	nav.querySelectorAll('.sb-hdr').forEach(hdr => {
+		hdr.addEventListener('click', () => {
+			const section = hdr.closest('.sb-section');
+			const isOpen  = section.classList.toggle('sb-open');
+			hdr.setAttribute('aria-expanded', isOpen);
+			const s = loadSectionState();
+			s[section.dataset.section] = isOpen;
+			saveSectionState(s);
+		});
+	});
+
+	// Wire category item clicks
 	nav.querySelectorAll('.cat-item').forEach(btn => {
 		btn.addEventListener('click', () => {
 			state.activeCategory = btn.dataset.cat;
@@ -61,11 +183,14 @@ export function buildCategoryNav(services) {
 			renderServices();
 		});
 	});
+
+	// Auto-expand extras on first visit
+	if (firstVisit && (links.length || pings.length)) {
+		autoExpandSections(nav, links.length > 0, pings.length > 0);
+	}
 }
 
 // ── Status filter pills ───────────────────────────────────────────────────────
-// Clicking the online/offline/total pills in the topbar filters the grid.
-// Clicking the active pill again clears the filter.
 
 export function initFilters() {
 	const pills = {
@@ -142,7 +267,6 @@ export function initSidebarToggle() {
 		btn.setAttribute('aria-expanded', open);
 	});
 
-	// Close sidebar when clicking outside of it
 	document.addEventListener('click', e => {
 		if (sidebar.classList.contains('open') &&
 			!sidebar.contains(e.target) &&
@@ -174,7 +298,6 @@ export function startClock() {
 }
 
 // ── Refresh countdown ─────────────────────────────────────────────────────────
-// Ticks every second and displays the time until the next full refresh cycle.
 
 export function startCountdown() {
 	clearInterval(state.countdownTimer);

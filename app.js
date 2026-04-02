@@ -4,7 +4,8 @@ import { state }                 from './js/state.js';
 import { svcId, debounce }       from './js/utils.js';
 import { renderServices }        from './js/render.js';
 import { loadServices, refreshAll, clearServiceTimers, startServiceTimers } from './js/services.js';
-import { buildCategoryNav, initFilters, initViewToggle, initSortToggle, initSidebarToggle, startClock, startCountdown } from './js/ui.js';
+import { buildSidebarSections, initFilters, initViewToggle, initSortToggle, initSidebarToggle, startClock, startCountdown } from './js/ui.js';
+import { startPingPolling } from './js/ping.js';
 import { checkForUpdate, initChangelog } from './js/updates.js';
 
 async function init() {
@@ -17,7 +18,7 @@ async function init() {
 	checkForUpdate(); // fire-and-forget — updates UI when response arrives
 
 	state.services = await loadServices();
-	buildCategoryNav(state.services);
+	buildSidebarSections(state.services, state.settings);
 
 	document.getElementById('loading-overlay')?.classList.add('hidden');
 	state.services.forEach(s => { state.statusMap[svcId(s)] = 'loading'; });
@@ -27,6 +28,7 @@ async function init() {
 
 	startCountdown();
 	startServiceTimers();
+	startPingPolling(state.settings?.ping_endpoints ?? []);
 
 	document.getElementById('refresh-btn')?.addEventListener('click', async () => {
 		clearServiceTimers();
