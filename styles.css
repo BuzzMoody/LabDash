@@ -1492,7 +1492,7 @@ body.icons-only-mode .service-status {
 }
 .sb-inner {
   overflow: hidden;
-  padding-bottom: 0.25rem;
+  margin-bottom: 1rem;
 }
 
 /* Suppress transitions during auto-expand measurement */
