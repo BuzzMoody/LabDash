@@ -13,7 +13,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -69,6 +71,12 @@ type dashConfig struct {
 // so api_key / username / password never reach the browser.
 var credRe = regexp.MustCompile(`(?m)^\s*(api_key|username|password)\s*:.*$`)
 
+// hostRe validates ICMP ping destinations — only hostnames and IP addresses.
+var hostRe = regexp.MustCompile(`^[a-zA-Z0-9.\-:]{1,255}$`)
+
+// pingRe extracts the RTT from ping output: "time=8.452 ms"
+var pingRe = regexp.MustCompile(`time=(\d+\.?\d*)\s*ms`)
+
 var (
 	version    string
 	isBeta     bool
@@ -112,6 +120,7 @@ func main() {
 	mux.HandleFunc("GET /ping",       handlePing)
 	mux.HandleFunc("GET /batch-ping", handleBatchPing)
 	mux.HandleFunc("GET /proxy",      handleProxy)
+	mux.HandleFunc("GET /icmp-ping",  handleICMPPing)
 	mux.Handle("GET /logos/",      cacheMiddleware(http.StripPrefix("/logos/", http.FileServer(http.Dir("/config/logos")))))
 	mux.HandleFunc("GET /custom.css", func(w http.ResponseWriter, r *http.Request) {
 		cacheMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -572,6 +581,38 @@ func loadServiceMap() (map[string]Service, error) {
 		}
 	}
 	return m, nil
+}
+
+// ── ICMP ping ─────────────────────────────────────────────────────────────────
+//
+// GET /icmp-ping?host=<hostname-or-ip>
+//
+// Runs one ICMP ping via the system ping binary and returns the round-trip time
+// in milliseconds. Returns {"ms":-1} if the host is unreachable or times out.
+
+func handleICMPPing(w http.ResponseWriter, r *http.Request) {
+	host := r.URL.Query().Get("host")
+	if host == "" || !hostRe.MatchString(host) {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	defer cancel()
+
+	out, err := exec.CommandContext(ctx, "ping", "-c", "1", "-W", "2", host).Output()
+
+	ms := -1.0
+	if err == nil {
+		if m := pingRe.FindSubmatch(out); len(m) >= 2 {
+			if v, e := strconv.ParseFloat(string(m[1]), 64); e == nil {
+				ms = v
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]float64{"ms": ms}) //nolint:errcheck
 }
 
 func validURL(rawURL string) bool {

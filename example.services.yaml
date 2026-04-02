@@ -69,6 +69,26 @@ settings:
   # icons_only: true            # hide service names, show icons only
   # hide_descriptions: true     # hide description text on all cards
 
+  # External links shown in the sidebar (optional)
+  external_links:
+    - name: GitHub
+      url: "https://github.com"
+      icon: "🐙"
+    - name: Home Router
+      url: "http://192.168.1.1"
+      icon: "🔀"
+
+  # ICMP ping targets shown in the sidebar (optional)
+  # logo: filename in config/logos/ — omit to show no icon
+  ping_endpoints:
+    - name: Router
+      destination: 192.168.1.1
+      logo: router.svg
+    - name: Google DNS
+      destination: 8.8.8.8
+    - name: Cloudflare
+      destination: 1.1.1.1
+
 services:
 
   # ── Media ─────────────────────────────────────────────────────────────────
