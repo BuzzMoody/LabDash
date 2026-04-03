@@ -65,20 +65,26 @@ jobs:
       - name: Redeploy Portainer Stack (Native cURL)
         run: |
           echo "Fetching current stack state..."
-          # 1. Fetch current stack configuration to preserve your Environment Variables
+          # 1. Fetch env vars from stack info
           STACK_INFO=$(curl -s -k -H "X-API-Key: ${{ secrets.PORTAINER_TOKEN }}" "${{ secrets.PORTAINER_URL }}/api/stacks/26")
-
-          # Extract Env vars using jq (defaults to empty array if none exist)
           ENV_VARS=$(echo "$STACK_INFO" | jq -c '.Env // []')
 
+          # 2. Fetch the current stack file content
+          STACK_FILE=$(curl -s -k -H "X-API-Key: ${{ secrets.PORTAINER_TOKEN }}" "${{ secrets.PORTAINER_URL }}/api/stacks/26/file")
+          STACK_FILE_CONTENT=$(echo "$STACK_FILE" | jq -r '.StackFileContent')
+
           echo "Triggering redeploy..."
-          # 2. Send the Redeploy PUT request and capture the HTTP status code
+          # 3. PUT with env vars + stack file content
+          PAYLOAD=$(jq -n \
+            --arg content "$STACK_FILE_CONTENT" \
+            --argjson env "$ENV_VARS" \
+            '{stackFileContent: $content, env: $env, prune: true, pullImage: true}')
+
           RESPONSE=$(curl -s -k -w "\nHTTP_STATUS:%{http_code}" -X PUT "${{ secrets.PORTAINER_URL }}/api/stacks/26?endpointId=3" \
             -H "X-API-Key: ${{ secrets.PORTAINER_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{\"env\": $ENV_VARS, \"prune\": true, \"pullImage\": true}")
+            -d "$PAYLOAD")
 
-          # Extract the HTTP status from the curl output
           HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
 
           if [ "$HTTP_STATUS" -eq 200 ]; then
