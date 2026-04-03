@@ -50,7 +50,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: BETA=true
+          build-args: |
+            BETA=true
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -62,6 +64,8 @@ jobs:
 
       - name: Redeploy Portainer Stack
         uses: wirgen/portainer-stack-redeploy-action@v1.1
+        env:
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
         with:
           portainerUrl: ${{ secrets.PORTAINER_URL }}
           accessToken: ${{ secrets.PORTAINER_TOKEN }}

@@ -10,6 +10,7 @@
 FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS builder
 ARG TARGETOS
 ARG TARGETARCH
+ARG GIT_SHA=dev
 
 WORKDIR /build
 
@@ -28,7 +29,7 @@ COPY js/ js/
 RUN --mount=type=cache,target=/root/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -mod=mod -ldflags="-s -w" -o labdash .
+    go build -mod=mod -ldflags="-s -w -X main.commitSHA=${GIT_SHA}" -o labdash .
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM alpine:3.21

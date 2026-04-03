@@ -92,7 +92,7 @@
           </div>
         </div>
         <div class="sidebar-meta">
-          <button id="version-btn" class="meta-item version-btn" title="View release notes" aria-haspopup="dialog">v{{.Version}}</button>
+          <button id="version-btn" class="meta-item version-btn" title="View release notes" aria-haspopup="dialog">{{if .IsBeta}}{{.Version}}{{else}}v{{.Version}}{{end}}</button>
           <span class="meta-sep">·</span>
           <a href="https://github.com/BuzzMoody/LabDash" class="meta-item meta-link" target="_blank" rel="noopener noreferrer">GitHub</a>
           <span class="meta-sep">·</span>
@@ -191,7 +191,7 @@
     <div class="changelog-backdrop"></div>
     <div class="changelog-panel">
       <div class="changelog-header">
-        <span class="changelog-version-tag">v{{.Version}}</span>
+        <span class="changelog-version-tag">{{if .IsBeta}}{{.Version}}{{else}}v{{.Version}}{{end}}</span>
         <h3 id="changelog-title">Release Notes</h3>
         <button class="changelog-close" aria-label="Close release notes">&times;</button>
       </div>
