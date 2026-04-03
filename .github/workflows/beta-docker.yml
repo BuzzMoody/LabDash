@@ -53,3 +53,17 @@ jobs:
           build-args: BETA=true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # --- Tailscale & Portainer Redeploy Steps ---
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Redeploy Portainer Stack
+        uses: wirgen/portainer-stack-redeploy-action@v1.1
+        with:
+          portainerUrl: ${{ secrets.PORTAINER_URL }}
+          accessToken: ${{ secrets.PORTAINER_TOKEN }}
+          stackId: 26
+          endpointId: 3
