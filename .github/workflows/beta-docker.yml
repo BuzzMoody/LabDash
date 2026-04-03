@@ -62,12 +62,29 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
-      - name: Redeploy Portainer Stack
-        uses: wirgen/portainer-stack-redeploy-action@v1.1
-        env:
-          NODE_TLS_REJECT_UNAUTHORIZED: 0
-        with:
-          portainerUrl: ${{ secrets.PORTAINER_URL }}
-          accessToken: ${{ secrets.PORTAINER_TOKEN }}
-          stackId: 26
-          endpointId: 3
+      - name: Redeploy Portainer Stack (Native cURL)
+        run: |
+          echo "Fetching current stack state..."
+          # 1. Fetch current stack configuration to preserve your Environment Variables
+          STACK_INFO=$(curl -s -k -H "X-API-Key: ${{ secrets.PORTAINER_TOKEN }}" "${{ secrets.PORTAINER_URL }}/api/stacks/26")
+
+          # Extract Env vars using jq (defaults to empty array if none exist)
+          ENV_VARS=$(echo "$STACK_INFO" | jq -c '.Env // []')
+
+          echo "Triggering redeploy..."
+          # 2. Send the Redeploy PUT request and capture the HTTP status code
+          RESPONSE=$(curl -s -k -w "\nHTTP_STATUS:%{http_code}" -X PUT "${{ secrets.PORTAINER_URL }}/api/stacks/26?endpointId=3" \
+            -H "X-API-Key: ${{ secrets.PORTAINER_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"env\": $ENV_VARS, \"prune\": true, \"pullImage\": true}")
+
+          # Extract the HTTP status from the curl output
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Stack successfully redeployed!"
+          else
+            echo "❌ Failed to redeploy. HTTP Status: $HTTP_STATUS"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
