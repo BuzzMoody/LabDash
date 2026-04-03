@@ -92,7 +92,7 @@
           </div>
         </div>
         <div class="sidebar-meta">
-          <button id="version-btn" class="meta-item version-btn" title="View release notes" aria-haspopup="dialog">v{{.Version}}</button>
+          <button id="version-btn" class="meta-item version-btn" title="View release notes" aria-haspopup="dialog">{{if .IsBeta}}{{.Version}}{{else}}v{{.Version}}{{end}}</button>
           <span class="meta-sep">·</span>
           <a href="https://github.com/BuzzMoody/LabDash" class="meta-item meta-link" target="_blank" rel="noopener noreferrer">GitHub</a>
           <span class="meta-sep">·</span>
@@ -152,9 +152,9 @@
             <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <text x="0.5" y="6.5" font-size="6" font-weight="700" font-family="system-ui,sans-serif" fill="currentColor">A</text>
               <text x="0.5" y="13.5" font-size="6" font-weight="700" font-family="system-ui,sans-serif" fill="currentColor">Z</text>
-              <path d="M9.5 1.5v10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-              <path class="arrow-down" d="M7.5 9l2 2.5 2-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-              <path class="arrow-up"   d="M7.5 4.5l2-2.5 2 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9.5 2.5v10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <path class="arrow-down" d="M7.5 10l2 2.5 2-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="arrow-up"   d="M7.5 5.5l2-2.5 2 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
         </div>
@@ -191,7 +191,7 @@
     <div class="changelog-backdrop"></div>
     <div class="changelog-panel">
       <div class="changelog-header">
-        <span class="changelog-version-tag">v{{.Version}}</span>
+        <span class="changelog-version-tag">{{if .IsBeta}}{{.Version}}{{else}}v{{.Version}}{{end}}</span>
         <h3 id="changelog-title">Release Notes</h3>
         <button class="changelog-close" aria-label="Close release notes">&times;</button>
       </div>

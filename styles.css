@@ -1448,9 +1448,7 @@ body.icons-only-mode .service-status {
 .sb-section {
   border-bottom: 1px solid var(--border);
 }
-.sb-section + .sb-section {
-  margin-top: 0.5rem;
-}
+.sb-section + .sb-section {}
 .sb-section:last-child {
   border-bottom: none;
 }
@@ -1460,8 +1458,9 @@ body.icons-only-mode .service-status {
   align-items: center;
   gap: 0.45rem;
   width: 100%;
-  padding: 0.55rem 0.875rem 0.75rem;
-  color: var(--text-1);
+  padding: 0.5rem 0.1rem;
+  color: var(--text-2);
+  font-family: var(--mono);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1489,6 +1488,7 @@ body.icons-only-mode .service-status {
 }
 .sb-open > .sb-body {
   grid-template-rows: 1fr;
+  margin-bottom: 0.5rem;
 }
 .sb-inner {
   overflow: hidden;

@@ -45,6 +45,7 @@ type pageData struct {
 	Version      string
 	AssetVer     string
 	HasCustomCSS bool
+	IsBeta       bool
 }
 
 type cachedPing struct {
@@ -77,6 +78,9 @@ var hostRe = regexp.MustCompile(`^[a-zA-Z0-9.\-:]{1,255}$`)
 // pingRe extracts the RTT from ping output: "time=8.452 ms"
 var pingRe = regexp.MustCompile(`time=(\d+\.?\d*)\s*ms`)
 
+// commitSHA is injected at build time via -ldflags="-X main.commitSHA=<sha>"
+var commitSHA string
+
 var (
 	version    string
 	isBeta     bool
@@ -94,6 +98,14 @@ func main() {
 	version   = strings.TrimSpace(string(versionFile))
 	isBeta    = os.Getenv("BETA") == "true"
 	startedAt = time.Now().Unix()
+
+	if isBeta && commitSHA != "" {
+		sha := commitSHA
+		if len(sha) > 7 {
+			sha = sha[:7]
+		}
+		version = sha
+	}
 
 	tmpl = template.Must(template.New("index").Parse(indexHTML))
 
@@ -204,6 +216,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		Version:      version,
 		AssetVer:     assetVer,
 		HasCustomCSS: hasCustomCSS,
+		IsBeta:       isBeta,
 	})
 }
 
