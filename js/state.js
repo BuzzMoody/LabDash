@@ -18,6 +18,7 @@ export const state = {
 	svcStarts:       {},     // svcId → setTimeout handle (initial stagger)
 	inFlight:        new Set(),  // svcIds currently being updated (dedup guard)
 	lastStatusCheck: {},     // svcId → timestamp of last individual ping
+	clockTimer:      null,
 	countdownTimer:  null,
 	nextRefreshAt:   null,
 	settings:        {},
