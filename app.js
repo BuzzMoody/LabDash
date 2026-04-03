@@ -4,8 +4,8 @@ import { state }                 from './js/state.js';
 import { svcId, debounce }       from './js/utils.js';
 import { renderServices }        from './js/render.js';
 import { loadServices, refreshAll, clearServiceTimers, startServiceTimers } from './js/services.js';
-import { buildSidebarSections, initFilters, initViewToggle, initSortToggle, initSidebarToggle, startClock, startCountdown } from './js/ui.js';
-import { startPingPolling } from './js/ping.js';
+import { buildSidebarSections, initFilters, initViewToggle, initSortToggle, initSidebarToggle, startClock, stopClock, startCountdown, stopCountdown } from './js/ui.js';
+import { startPingPolling, stopPingPolling } from './js/ping.js';
 import { checkForUpdate, initChangelog } from './js/updates.js';
 
 async function init() {
@@ -43,3 +43,19 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+document.addEventListener('visibilitychange', () => {
+	if (document.hidden) {
+		document.body.classList.add('page-hidden');
+		stopClock();
+		stopCountdown();
+		clearServiceTimers();
+		stopPingPolling();
+	} else {
+		document.body.classList.remove('page-hidden');
+		startClock();
+		startCountdown();
+		startServiceTimers();
+		startPingPolling(state.settings?.ping_endpoints ?? []);
+	}
+});

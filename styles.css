@@ -773,6 +773,9 @@ html {
 #sort-alpha-btn.sort-desc .arrow-down { display: none; }
 #sort-alpha-btn.sort-desc .arrow-up   { display: block; }
 
+/* ── Pause all animations when tab is not focused ───────────────────────────── */
+body.page-hidden * { animation-play-state: paused !important; }
+
 /* ── Loading Overlay ────────────────────────────────────────────────────────── */
 #loading-overlay {
   flex: 1;

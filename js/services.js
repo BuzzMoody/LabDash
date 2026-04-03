@@ -93,19 +93,62 @@ export async function loadServices() {
 	}
 }
 
-// ── Chip value flash ──────────────────────────────────────────────────────────
-// Updates a single stat chip value and triggers the flash animation.
-// The forced reflow (offsetWidth read) is required to restart the CSS animation
-// when the value changes in rapid succession.
+// ── Chip value flash + number ticker ─────────────────────────────────────────
+// Updates a stat chip value. If both old and new values are numeric (with an
+// optional matching suffix e.g. "GB", "%"), the value ticks smoothly from old
+// to new using a 600 ms ease-out animation. Non-numeric values fall back to an
+// instant swap with the existing flash highlight.
+// The forced reflow (offsetWidth read) restarts the CSS animation when the
+// value changes in rapid succession.
+
+// Matches: optional leading number (with commas/decimals) + optional suffix.
+// e.g. "1,234.5 GB" → ["1,234.5", "GB"]  |  "99%" → ["99", "%"]
+// Captures the space (or lack of it) between number and suffix so it is
+// preserved exactly — e.g. "1.2 GB" → suffix " GB", "99%" → suffix "%".
+const NUM_RE = /^([\d,]+\.?\d*)(\s*.*)$/;
 
 function flashChipValue(chip, newVal) {
 	if (!chip) return;
 	const valueEl = chip.querySelector('.s-value');
 	if (!valueEl || valueEl.textContent === newVal) return;
-	valueEl.textContent = newVal;
+
+	const oldMatch = valueEl.textContent.match(NUM_RE);
+	const newMatch = newVal.match(NUM_RE);
+
+	// Trigger the flash highlight animation on the chip
 	chip.classList.remove('stat-updated');
 	void chip.offsetWidth; // force reflow to restart animation
 	chip.classList.add('stat-updated');
+
+	if (oldMatch && newMatch && oldMatch[2] === newMatch[2]) {
+		const from     = parseFloat(oldMatch[1].replace(/,/g, ''));
+		const to       = parseFloat(newMatch[1].replace(/,/g, ''));
+		const suffix   = newMatch[2];
+		const decimals = newMatch[1].includes('.') ? newMatch[1].split('.')[1].length : 0;
+		const useCommas = oldMatch[1].includes(',') || newMatch[1].includes(',');
+
+		if (!isNaN(from) && !isNaN(to) && from !== to) {
+			const DURATION = 600;
+			const startTime = performance.now();
+
+			function tick(now) {
+				const progress = Math.min((now - startTime) / DURATION, 1);
+				const eased    = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+				const current  = from + (to - from) * eased;
+				let formatted  = current.toFixed(decimals);
+				if (useCommas) formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+				valueEl.textContent = `${formatted}${suffix}`;
+				if (progress < 1) requestAnimationFrame(tick);
+				else valueEl.textContent = newVal; // snap to exact final value
+			}
+
+			requestAnimationFrame(tick);
+			return;
+		}
+	}
+
+	// Fallback: non-numeric or mismatched suffix — instant swap
+	valueEl.textContent = newVal;
 }
 
 // ── Update status + stats for one service ─────────────────────────────────────

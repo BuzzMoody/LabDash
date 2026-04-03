@@ -294,10 +294,20 @@ export function startClock() {
 	}
 
 	tick();
-	setInterval(tick, 1000);
+	state.clockTimer = setInterval(tick, 1000);
+}
+
+export function stopClock() {
+	clearInterval(state.clockTimer);
+	state.clockTimer = null;
 }
 
 // ── Refresh countdown ─────────────────────────────────────────────────────────
+
+export function stopCountdown() {
+	clearInterval(state.countdownTimer);
+	state.countdownTimer = null;
+}
 
 export function startCountdown() {
 	clearInterval(state.countdownTimer);
