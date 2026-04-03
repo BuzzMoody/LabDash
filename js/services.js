@@ -103,7 +103,9 @@ export async function loadServices() {
 
 // Matches: optional leading number (with commas/decimals) + optional suffix.
 // e.g. "1,234.5 GB" → ["1,234.5", "GB"]  |  "99%" → ["99", "%"]
-const NUM_RE = /^([\d,]+\.?\d*)\s*(.*)$/;
+// Captures the space (or lack of it) between number and suffix so it is
+// preserved exactly — e.g. "1.2 GB" → suffix " GB", "99%" → suffix "%".
+const NUM_RE = /^([\d,]+\.?\d*)(\s*.*)$/;
 
 function flashChipValue(chip, newVal) {
 	if (!chip) return;
@@ -135,7 +137,7 @@ function flashChipValue(chip, newVal) {
 				const current  = from + (to - from) * eased;
 				let formatted  = current.toFixed(decimals);
 				if (useCommas) formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-				valueEl.textContent = suffix ? `${formatted} ${suffix}` : formatted;
+				valueEl.textContent = `${formatted}${suffix}`;
 				if (progress < 1) requestAnimationFrame(tick);
 				else valueEl.textContent = newVal; // snap to exact final value
 			}
