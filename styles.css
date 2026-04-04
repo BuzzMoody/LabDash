@@ -1509,7 +1509,7 @@ body.icons-only-mode .service-status {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.35rem 0.875rem;
+  padding: 0.55rem 0.875rem;
   font-size: 0.8rem;
   color: var(--text-2);
   border-radius: 0;
@@ -1569,6 +1569,12 @@ body.icons-only-mode .service-status {
 }
 .ping-item:hover { background: var(--surface-hi); }
 
+/* Subtle separator between left and right columns */
+.ping-item:nth-child(odd) {
+  border-right: 1px solid var(--border);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
 .ping-item .ping-logo {
   width: 14px;
   height: 14px;
@@ -1597,8 +1603,9 @@ body.icons-only-mode .service-status {
   bottom: calc(100% + 5px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface-hi);
+  background: var(--bg);
   border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
   color: var(--text-1);
   font-size: 0.65rem;
   white-space: nowrap;
@@ -1607,6 +1614,6 @@ body.icons-only-mode .service-status {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s;
-  z-index: 10;
+  z-index: 100;
 }
 .ping-item:hover::after { opacity: 1; }
