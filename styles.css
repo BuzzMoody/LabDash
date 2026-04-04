@@ -337,11 +337,11 @@ html {
 
 /* Sidebar footer */
 .sidebar-footer {
-  padding: 0.75rem 0.875rem;
+  padding: 0.6rem 0.875rem;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-shrink: 0;
 }
 .refresh-area {
@@ -352,9 +352,8 @@ html {
 .refresh-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
   flex-shrink: 0;
   border-radius: var(--radius-sm);
   background: var(--surface);
@@ -362,30 +361,23 @@ html {
   color: var(--text-2);
   transition: all 0.2s;
 }
-.refresh-btn svg { width: 14px; height: 14px; flex-shrink: 0; pointer-events: none; }
+.refresh-btn svg { width: 12px; height: 12px; flex-shrink: 0; pointer-events: none; }
 .refresh-btn:hover { background: var(--surface-hi); color: var(--cyan); border-color: rgba(34,211,238,0.3); }
 .refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
-
-.refresh-times {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  overflow: hidden;
+#next-refresh {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  color: inherit;
+  white-space: nowrap;
 }
 .last-updated {
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   color: #6b82a0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.next-refresh {
-  font-family: var(--mono);
-  font-size: 0.64rem;
-  color: #6b82a0;
-  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 .sidebar-meta {
   display: flex;
