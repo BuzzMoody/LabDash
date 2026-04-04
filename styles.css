@@ -1512,7 +1512,7 @@ body.icons-only-mode .service-status {
   padding: 0.55rem 0.875rem;
   font-size: 0.8rem;
   color: var(--text-2);
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   transition: background 0.15s, color 0.15s;
 }
 .link-item:hover {
