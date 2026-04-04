@@ -13,7 +13,7 @@ function latencyColor(ms) {
 // ── DOM update ────────────────────────────────────────────────────────────────
 
 function applyResult(destination, ms) {
-	const entry = document.querySelector(`.ping-entry[data-ping-host="${destination}"]`);
+	const entry = document.querySelector(`.ping-item[data-ping-host="${destination}"]`);
 	if (!entry) return;
 	const el = entry.querySelector('.ping-ms');
 	if (!el) return;

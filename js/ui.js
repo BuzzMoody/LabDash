@@ -86,15 +86,17 @@ function buildLinksContent(links) {
 	`).join('');
 }
 
-// ── Ping entries ──────────────────────────────────────────────────────────────
+// ── Ping bar (2-column grid above footer) ─────────────────────────────────────
 
-function buildPingContent(endpoints) {
-	return endpoints.map(ep => `
-		<div class="ping-entry" data-ping-host="${ep.destination}">
+function buildPingBar(endpoints) {
+	const bar = document.getElementById('ping-bar');
+	if (!bar) return;
+	if (!endpoints?.length) { bar.innerHTML = ''; return; }
+	bar.innerHTML = endpoints.map(ep => `
+		<div class="ping-item" data-ping-host="${ep.destination}" data-ping-name="${ep.name ?? ep.destination}">
 			${ep.logo
 				? `<img class="ping-logo" src="/logos/${ep.logo}" alt="" loading="lazy" />`
 				: `<span class="ping-logo-ph"></span>`}
-			<span class="ping-name">${ep.name ?? ep.destination}</span>
 			<span class="ping-ms">—</span>
 		</div>
 	`).join('');
@@ -104,19 +106,15 @@ function buildPingContent(endpoints) {
 // Temporarily suppresses transitions so we can measure the nav height accurately,
 // then opens as many sections as fit without causing a scroll, bottom-up.
 
-function autoExpandSections(nav, hasLinks, hasPing) {
+function autoExpandSections(nav, hasLinks) {
 	nav.classList.add('sb-no-trans');
 
 	const open  = name => { nav.querySelector(`[data-section="${name}"]`)?.classList.add('sb-open'); };
 	const close = name => { nav.querySelector(`[data-section="${name}"]`)?.classList.remove('sb-open'); };
 
 	if (hasLinks) open('links');
-	if (hasPing)  open('ping');
 
 	requestAnimationFrame(() => {
-		if (nav.scrollHeight > nav.clientHeight) {
-			if (hasPing) close('ping');
-		}
 		requestAnimationFrame(() => {
 			if (nav.scrollHeight > nav.clientHeight) {
 				if (hasLinks) close('links');
@@ -126,7 +124,6 @@ function autoExpandSections(nav, hasLinks, hasPing) {
 			// Sync final open state back to localStorage
 			const s = loadSectionState();
 			s.links = !!nav.querySelector('[data-section="links"]')?.classList.contains('sb-open');
-			s.ping  = !!nav.querySelector('[data-section="ping"]')?.classList.contains('sb-open');
 			saveSectionState(s);
 		});
 	});
@@ -146,8 +143,9 @@ export function buildSidebarSections(services, settings) {
 	nav.innerHTML = [
 		sectionWrap('categories', 'Categories', buildCatContent(services),   sState.categories),
 		links.length ? sectionWrap('links', 'Links', buildLinksContent(links), sState.links) : '',
-		pings.length ? sectionWrap('ping',  'Ping',  buildPingContent(pings),  sState.ping)  : '',
 	].join('');
+
+	buildPingBar(pings);
 
 	// Wire section toggle buttons
 	nav.querySelectorAll('.sb-hdr').forEach(hdr => {
@@ -185,8 +183,8 @@ export function buildSidebarSections(services, settings) {
 	});
 
 	// Auto-expand extras on first visit
-	if (firstVisit && (links.length || pings.length)) {
-		autoExpandSections(nav, links.length > 0, pings.length > 0);
+	if (firstVisit && links.length) {
+		autoExpandSections(nav, links.length > 0);
 	}
 }
 

@@ -1545,41 +1545,68 @@ body.icons-only-mode .service-status {
 }
 .link-item:hover .link-arrow { opacity: 0.8; }
 
-/* ── Ping entries ────────────────────────────────────────────────────────────── */
+/* ── Ping bar ────────────────────────────────────────────────────────────────── */
 
-.ping-entry {
+#ping-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.15rem 0.3rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#ping-bar:empty { display: none; }
+
+.ping-item {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.35rem 0.875rem;
-  font-size: 0.8rem;
-  color: var(--text-2);
+  gap: 0.4rem;
+  padding: 0.28rem 0.4rem;
+  border-radius: var(--radius-sm);
+  position: relative;
+  cursor: default;
+  transition: background 0.15s;
 }
+.ping-item:hover { background: var(--surface-hi); }
 
-.ping-logo {
-  width: 18px;
-  height: 18px;
+.ping-item .ping-logo {
+  width: 14px;
+  height: 14px;
   object-fit: contain;
   flex-shrink: 0;
-  border-radius: 3px;
+  border-radius: 2px;
 }
-.ping-logo-ph {
-  width: 18px;
-  height: 18px;
+.ping-item .ping-logo-ph {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
 }
-
-.ping-name {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ping-ms {
+.ping-item .ping-ms {
   font-family: var(--mono);
-  font-size: 0.72rem;
-  flex-shrink: 0;
-  min-width: 2.8rem;
+  font-size: 0.68rem;
+  color: var(--text-3);
+  flex: 1;
   text-align: right;
   transition: color 0.3s;
 }
+
+/* Tooltip showing the endpoint name on hover */
+.ping-item::after {
+  content: attr(data-ping-name);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-size: 0.65rem;
+  white-space: nowrap;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+.ping-item:hover::after { opacity: 1; }
