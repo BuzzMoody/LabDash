@@ -361,7 +361,9 @@ html {
   color: var(--text-2);
   transition: all 0.2s;
 }
+.refresh-btn svg { width: 12px; height: 12px; flex-shrink: 0; pointer-events: none; }
 .refresh-btn:hover { background: var(--surface-hi); color: var(--cyan); border-color: rgba(34,211,238,0.3); }
+.refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
 #next-refresh {
   font-family: var(--mono);
   font-size: 0.64rem;

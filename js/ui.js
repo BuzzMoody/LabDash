@@ -313,7 +313,7 @@ export function startCountdown() {
 		const el = document.getElementById('next-refresh');
 		if (!el || !state.nextRefreshAt) return;
 		const secs = Math.max(0, Math.ceil((state.nextRefreshAt - Date.now()) / 1000));
-		el.textContent = `↺ ${secs}s`;
+		el.textContent = `${secs}s`;
 		if (secs === 0) state.nextRefreshAt = Date.now() + CONFIG.refreshInterval;
 	}, 1000);
 }
