@@ -1,6 +1,7 @@
 ## What's Changed
 
-- Beta → Main: sidebar tweaks, beta SHA version, CI redeploy pipeline (#34) (c6064a6)
+- style: ping bar redesign + sidebar/footer polish (#36) (9ca8536)
+- style: tab visibility pause + stat chip number ticker (#35) (0049f22)
 
 ---
-**Full Changelog**: https://github.com/BuzzMoody/LabDash/compare/v1.5.0...v1.5.1
+**Full Changelog**: https://github.com/BuzzMoody/LabDash/compare/v1.5.1...v1.6.0
