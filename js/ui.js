@@ -243,6 +243,37 @@ export function initSortToggle() {
 	});
 }
 
+// ── Card zoom control ─────────────────────────────────────────────────────────
+
+export function initZoomControl() {
+	const STEP = 0.1, MIN = 0.5, MAX = 1.5;
+
+	function applyZoom() {
+		const grid = document.getElementById('services-grid');
+		if (grid) grid.style.zoom = state.cardZoom;
+		const levelEl = document.getElementById('zoom-level');
+		if (levelEl) levelEl.textContent = `${Math.round(state.cardZoom * 100)}%`;
+		document.getElementById('zoom-out-btn')?.toggleAttribute('disabled', state.cardZoom <= MIN);
+		document.getElementById('zoom-in-btn')?.toggleAttribute('disabled',  state.cardZoom >= MAX);
+		localStorage.setItem('cardZoom', state.cardZoom);
+	}
+
+	document.getElementById('zoom-out-btn')?.addEventListener('click', () => {
+		state.cardZoom = Math.max(MIN, Math.round((state.cardZoom - STEP) * 10) / 10);
+		applyZoom();
+	});
+	document.getElementById('zoom-in-btn')?.addEventListener('click', () => {
+		state.cardZoom = Math.min(MAX, Math.round((state.cardZoom + STEP) * 10) / 10);
+		applyZoom();
+	});
+	document.getElementById('zoom-level-btn')?.addEventListener('click', () => {
+		state.cardZoom = 1;
+		applyZoom();
+	});
+
+	applyZoom();
+}
+
 // ── Sidebar toggle (mobile) ───────────────────────────────────────────────────
 
 export function initSidebarToggle() {

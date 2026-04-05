@@ -203,6 +203,22 @@
   <div id="sidebar-overlay"></div>
   <div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
+  <div id="zoom-widget" aria-label="Zoom controls">
+    <button class="zoom-widget-btn" id="zoom-out-btn" title="Zoom out" aria-label="Zoom out">
+      <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="zoom-widget-btn zoom-widget-level" id="zoom-level-btn" title="Reset zoom" aria-label="Reset zoom">
+      <span id="zoom-level">100%</span>
+    </button>
+    <button class="zoom-widget-btn" id="zoom-in-btn" title="Zoom in" aria-label="Zoom in">
+      <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
   <script type="module" src="app.js?v={{.AssetVer}}"></script>
 </body>
 </html>
