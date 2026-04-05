@@ -4,7 +4,7 @@ import { state }                 from './js/state.js';
 import { svcId, debounce }       from './js/utils.js';
 import { renderServices }        from './js/render.js';
 import { loadServices, refreshAll, clearServiceTimers, startServiceTimers } from './js/services.js';
-import { buildSidebarSections, initFilters, initViewToggle, initSortToggle, initSidebarToggle, startClock, stopClock, startCountdown, stopCountdown } from './js/ui.js';
+import { buildSidebarSections, initFilters, initViewToggle, initSortToggle, initZoomControl, initSidebarToggle, startClock, stopClock, startCountdown, stopCountdown } from './js/ui.js';
 import { startPingPolling, stopPingPolling } from './js/ping.js';
 import { checkForUpdate, initChangelog } from './js/updates.js';
 
@@ -14,6 +14,7 @@ async function init() {
 	initFilters();
 	initViewToggle();
 	initSortToggle();
+	initZoomControl();
 	initChangelog();
 	checkForUpdate(); // fire-and-forget — updates UI when response arrives
 

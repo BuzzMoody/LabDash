@@ -759,6 +759,9 @@ html {
 .view-btn svg { width: 13px; height: 13px; pointer-events: none; display: block; }
 .view-btn:hover { color: var(--text-2); }
 .view-btn.active { background: var(--surface-hi); color: var(--text-1); }
+.view-btn:disabled { opacity: 0.3; pointer-events: none; }
+.zoom-level-btn { width: auto; padding: 0 0.4rem; font-family: var(--mono); font-size: 0.65rem; color: var(--text-3); }
+.zoom-level-btn:hover { color: var(--text-2); }
 .view-toggle-sep { width: 1px; height: 16px; background: var(--border); margin: 0 0.1rem; flex-shrink: 0; }
 #sort-alpha-btn .arrow-up            { display: none; }
 #sort-alpha-btn.sort-desc .arrow-down { display: none; }

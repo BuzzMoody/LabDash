@@ -157,6 +157,20 @@
               <path class="arrow-up"   d="M7.5 5.5l2-2.5 2 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
+          <div class="view-toggle-sep" aria-hidden="true"></div>
+          <button class="view-btn" id="zoom-out-btn" title="Zoom out" aria-label="Zoom out">
+            <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="view-btn zoom-level-btn" id="zoom-level-btn" title="Reset zoom" aria-label="Reset zoom">
+            <span id="zoom-level">100%</span>
+          </button>
+          <button class="view-btn" id="zoom-in-btn" title="Zoom in" aria-label="Zoom in">
+            <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
         </div>
         <div class="clock" id="clock" aria-live="off"></div>
       </header>
