@@ -1558,13 +1558,8 @@ body.icons-only-mode .service-status {
   cursor: default;
   transition: background 0.15s;
 }
+.ping-item { background: var(--surface); }
 .ping-item:hover { background: var(--surface-hi); }
-
-/* Subtle separator between left and right columns */
-.ping-item:nth-child(odd) {
-  border-right: 1px solid var(--border);
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-}
 
 .ping-item .ping-logo {
   width: 14px;
