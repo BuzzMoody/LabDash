@@ -760,8 +760,47 @@ html {
 .view-btn:hover { color: var(--text-2); }
 .view-btn.active { background: var(--surface-hi); color: var(--text-1); }
 .view-btn:disabled { opacity: 0.3; pointer-events: none; }
-.zoom-level-btn { width: auto; padding: 0 0.4rem; font-family: var(--mono); font-size: 0.65rem; color: var(--text-3); }
-.zoom-level-btn:hover { color: var(--text-2); }
+
+/* ── Zoom widget (floating, bottom-right) ────────────────────────────────────── */
+#zoom-widget {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  background: var(--bg-topbar);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 50;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+#zoom-widget:hover { opacity: 1; }
+.zoom-widget-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-3);
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.zoom-widget-btn:hover { background: var(--surface-hi); color: var(--text-1); }
+.zoom-widget-btn:disabled { opacity: 0.3; pointer-events: none; }
+.zoom-widget-btn svg { width: 12px; height: 12px; pointer-events: none; display: block; }
+.zoom-widget-level {
+  width: auto;
+  padding: 0 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
 .view-toggle-sep { width: 1px; height: 16px; background: var(--border); margin: 0 0.1rem; flex-shrink: 0; }
 #sort-alpha-btn .arrow-up            { display: none; }
 #sort-alpha-btn.sort-desc .arrow-down { display: none; }
