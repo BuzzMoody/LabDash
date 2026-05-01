@@ -55,6 +55,7 @@
 #
 #  icons_only field (settings only):
 #    Set to true to hide service names and show only icons for a compact layout.
+#    Set to "mobile" to apply icons-only mode on mobile screens only (≤840px).
 #
 #  hide_descriptions field (settings only):
 #    Set to true to hide description text on all cards.
@@ -66,7 +67,8 @@ settings:
   subtitle: "Home Server"
   refresh_interval: 30          # seconds between auto-refresh
   # emoji_stats: true           # show emojis instead of text labels on stat chips
-  # icons_only: true            # hide service names, show icons only
+  # icons_only: true            # hide service names, show icons only (all screens)
+  # icons_only: mobile          # icons-only on mobile screens only (≤840px)
   # hide_descriptions: true     # hide description text on all cards
 
   # External links shown in the sidebar (optional)
