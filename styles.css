@@ -1472,6 +1472,60 @@ body.icons-only-mode .service-status {
     margin: 0.5rem 0;
 }
 
+/* ── Mode: Icons Only on Mobile only ── */
+@media (max-width: 840px) {
+    body.icons-only-mobile-mode #services-grid:not(.view-grouped) .service-category-badge {
+        display: none;
+    }
+    body.icons-only-mobile-mode #services-grid:not(.view-grouped),
+    body.icons-only-mobile-mode .cat-section-grid {
+        grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+        gap: 1rem;
+    }
+    body.icons-only-mobile-mode .service-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }
+    body.icons-only-mobile-mode .card-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin: 0;
+        gap: 0;
+    }
+    body.icons-only-mobile-mode .service-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 3.5rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    body.icons-only-mobile-mode .card-title-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-left: 0;
+        gap: 0.5rem;
+    }
+    body.icons-only-mobile-mode .service-name {
+        display: none;
+    }
+    body.icons-only-mobile-mode .service-desc,
+    body.icons-only-mobile-mode .stats-scroll-wrapper,
+    body.icons-only-mobile-mode .service-status .status-text {
+        display: none;
+    }
+    body.icons-only-mobile-mode .service-status {
+        position: relative;
+        margin: 0.5rem 0;
+    }
+}
+
 /* Update default logo sizing */
 .service-logo-img {
     width: 70%;

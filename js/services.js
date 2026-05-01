@@ -81,7 +81,8 @@ export async function loadServices() {
 				CONFIG.refreshInterval = refresh_interval * 1000;
 			}
 
-			document.body.classList.toggle('icons-only-mode',       !!config.settings.icons_only);
+			document.body.classList.toggle('icons-only-mode',        config.settings.icons_only === true);
+			document.body.classList.toggle('icons-only-mobile-mode', config.settings.icons_only === 'mobile');
 			document.body.classList.toggle('hide-descriptions-mode', !!config.settings.hide_descriptions);
 		}
 
