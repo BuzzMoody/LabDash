@@ -123,26 +123,22 @@ html {
   position: absolute;
   border-radius: 50%;
   filter: blur(90px);
-  will-change: transform;
 }
 .orb-1 {
   width: 600px; height: 600px;
   top: -180px; left: -120px;
   background: radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 65%);
-  animation: orb-drift-1 25s ease-in-out infinite alternate;
 }
 .orb-2 {
   width: 700px; height: 700px;
   bottom: -250px; right: -180px;
   background: radial-gradient(circle, rgba(129, 140, 248, 0.16) 0%, transparent 65%);
-  animation: orb-drift-2 30s ease-in-out infinite alternate;
 }
 .orb-3 {
   width: 400px; height: 400px;
   top: 45%; left: 45%;
   transform: translate(-50%, -50%);
   background: radial-gradient(circle, rgba(232, 121, 249, 0.07) 0%, transparent 65%);
-  animation: orb-drift-3 20s ease-in-out infinite alternate;
 }
 .grid-dots {
   position: absolute;
@@ -190,7 +186,7 @@ html {
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  animation: brand-icon 9s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(34,211,238,0.5)) drop-shadow(0 0 18px rgba(34,211,238,0.12));
 }
 .brand-text {
   display: flex;
@@ -201,13 +197,11 @@ html {
   font-size: 0.85rem;
   font-weight: 800;
   letter-spacing: 0.18em;
-  background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink), var(--cyan), var(--purple));
-  background-size: 300% 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   white-space: nowrap;
-  animation: brand-aurora 5s linear infinite;
 }
 .brand-subtitle {
   font-size: 0.5rem;
@@ -216,7 +210,6 @@ html {
   color: #64748b;
   text-transform: uppercase;
   white-space: nowrap;
-  animation: brand-sub-breathe 4s ease-in-out infinite;
 }
 
 /* Search */
@@ -422,11 +415,7 @@ html {
   position: relative;
   top: -1px;
   flex-shrink: 0;
-  animation: update-pulse 2s ease-in-out infinite;
-}
-@keyframes update-pulse {
-  0%, 100% { box-shadow: 0 0 0 0   rgba(251,191,36,0.6); }
-  50%       { box-shadow: 0 0 0 4px rgba(251,191,36,0);   }
+  box-shadow: 0 0 0 2px rgba(251,191,36,0.4);
 }
 
 /* ── Changelog Modal ─────────────────────────────────────────────────────────── */
@@ -913,8 +902,6 @@ body.page-hidden * { animation-play-state: paused !important; }
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
   transition:
     transform 0.35s var(--spring),
     border-color 0.25s var(--ease),
@@ -1265,52 +1252,6 @@ body.page-hidden * { animation-play-state: paused !important; }
 .toast-icon { font-size: 1rem; flex-shrink: 0; }
 
 /* ── animations ─────────────────────────────────────────────────────────────── */
-@keyframes orb-drift-1 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(60px, 40px) scale(1.12); }
-}
-@keyframes orb-drift-2 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(-50px, -30px) scale(1.08); }
-}
-@keyframes orb-drift-3 {
-  from { transform: translate(-50%, -50%) scale(1); }
-  to   { transform: translate(calc(-50% + 30px), calc(-50% - 40px)) scale(1.15); }
-}
-
-@keyframes brand-icon {
-  0%   {
-    transform: translateY(0) rotate(0deg) scale(1);
-    filter: drop-shadow(0 0 6px rgba(34,211,238,0.5)) drop-shadow(0 0 18px rgba(34,211,238,0.12));
-  }
-  25%  {
-    transform: translateY(-5px) rotate(5deg) scale(1.07);
-    filter: drop-shadow(0 0 10px rgba(129,140,248,0.7)) drop-shadow(0 0 24px rgba(129,140,248,0.22));
-  }
-  55%  {
-    transform: translateY(-3px) rotate(-2deg) scale(1.04);
-    filter: drop-shadow(0 0 12px rgba(232,121,249,0.65)) drop-shadow(0 0 28px rgba(232,121,249,0.18));
-  }
-  80%  {
-    transform: translateY(-6px) rotate(3deg) scale(1.05);
-    filter: drop-shadow(0 0 9px rgba(34,211,238,0.6)) drop-shadow(0 0 22px rgba(129,140,248,0.18));
-  }
-  100% {
-    transform: translateY(0) rotate(0deg) scale(1);
-    filter: drop-shadow(0 0 6px rgba(34,211,238,0.5)) drop-shadow(0 0 18px rgba(34,211,238,0.12));
-  }
-}
-
-@keyframes brand-aurora {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
-}
-
-@keyframes brand-sub-breathe {
-  0%, 100% { opacity: 0.9;  letter-spacing: 0.30em; }
-  50%       { opacity: 0.45; letter-spacing: 0.34em; }
-}
-
 @keyframes card-in {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
